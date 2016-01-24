@@ -1,3 +1,6 @@
+/// <reference path="../webgl-frameworks/Three.js" />
+/// <reference path="../Graph.js" />
+/// <reference path="../layouts/force-directed-layout.js" />
 /**
   @author David Piegza
 

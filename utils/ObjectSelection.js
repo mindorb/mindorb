@@ -24,6 +24,7 @@ THREE.ObjectSelection = function (parameters) {
     var callbackSelected = parameters.selected;
     var callbackClicked = parameters.clicked;
     var callbackMouseDown = parameters.mouseDown;
+    var callbackMouseUp = parameters.mouseUp;
     var mouse = { x: 0, y: 0 };
 
     this.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -40,14 +41,23 @@ THREE.ObjectSelection = function (parameters) {
             }
         }
     }
-    window.addEventListener('mousedown', onDocumentMouseDown, false);
-    function onDocumentMouseDown(event) {
+    this.domElement.addEventListener('mousedown', onMouseDown, false);
+    function onMouseDown(event) {
         if (_this.INTERSECTED) {
-            if (typeof callbackMouseDown === 'function') {
-                callbackMouseDown(_this.INTERSECTED);
+            if (typeof callbackMouseDown === 'function' ) {
+                callbackMouseDown(_this.INTERSECTED,event);
             }
         }
     }
+    this.domElement.addEventListener('mouseup', onMouseUp, false);
+    function onMouseUp(event) {
+        if (_this.INTERSECTED) {
+            if (typeof callbackMouseUp === 'function' ) {
+                callbackMouseUp(_this.INTERSECTED,event);
+            }
+        }
+    }
+
     this.render = function (scene, camera) {
         var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
         this.projector.unprojectVector(vector, camera);

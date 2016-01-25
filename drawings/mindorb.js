@@ -23,11 +23,12 @@ Drawing.Minorb = function (options) {
     var stats;
     var info_text = {};
     var graph = new Graph({ limit: options.limit });
-
+    var selectedHull = null;
+    
     var geometries = [];
     var nodes = [];
     var that = this;
-
+    var currentMouseX, currentMouseY; //for hull scalling
     init();
     createGraph();
     animate();
@@ -53,7 +54,7 @@ Drawing.Minorb = function (options) {
         controls.dynamicDampingFactor = 0.3;
 
         controls.keys = [65, 83, 68];
-
+        controls.enabled = false;
         controls.addEventListener('change', render);
         //controls.enabled = false;
 
@@ -76,18 +77,36 @@ Drawing.Minorb = function (options) {
                     }
                 },
                 clicked: function (obj) {
-                    if (obj != null && obj.type == "node") {
-                        graph.getNode(obj.id).haveAHull = true;;
+                    if (obj != null) {
+                        if (obj.type == "node") {
+                            graph.getNode(obj.id).haveAHull = true;
+                        }
+                        else if(obj.type=="hull"){
+                            //TODO create new Node at intersection
+                        }
                     }
                     
                 },
-                mouseDown: function (obj) {
-                    console.log(obj);
+                mouseDown: function (obj, event) {
+                    /// <param name="event" type="MouseEvent">clickEvent</param>
+                    if (obj != null && obj.type == "hull") {
+                        if (event.button == 2) { //right mouse button to start scaling
+                            selectedHull = obj;
+                            currentMouseX = event.offsetX;
+                            currentMouseY = event.offsetY;
+                        }   
+                    }
+                },
+                mouseUp: function (obj,event) {
+                    if (event.button == 2) {
+                        selectedHull = null;
+                    }
                 }
+
 
             });
         }
-
+        document.addEventListener("mousemove",scaleHandler);
         document.body.appendChild(renderer.domElement);
 
         // Stats.js
@@ -233,5 +252,11 @@ Drawing.Minorb = function (options) {
     }
 
     // Stop layout calculation
-
+    function scaleHandler(event) {
+        
+        if (selectedHull) {
+            selectedHull.scale.add( new THREE.Vector3(event.movementX, event.movementX, event.movementX));
+            console.log();
+        }
+    }
 }

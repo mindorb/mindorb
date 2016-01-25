@@ -2,11 +2,10 @@
 /// <reference path="../Graph.js" />
 /// <reference path="../utils/TrackballControls.js" />
 /// <reference path="../utils/ObjectSelection.js" />
-/// <reference path="../layouts/force-directed-layout.js" />
 /**
   @author AhmadAboBakr
 
-
+  WIP
 
  */
 
@@ -15,15 +14,10 @@ var Drawing = Drawing || {};
 Drawing.Minorb = function (options) {
     var options = options || {};
 
-    this.layout = options.layout || "3d";
-    this.layout_options = options.graphLayout || {};
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
     this.selection = options.selection || false;
-    this.limit = options.limit || 100;
-    this.nodes_count = options.numNodes || 20;
-    this.edges_count = options.numEdges || 10;
 
     var camera, controls, scene, renderer, interaction, geometry, object_selection;
     var stats;
@@ -31,7 +25,7 @@ Drawing.Minorb = function (options) {
     var graph = new Graph({ limit: options.limit });
 
     var geometries = [];
-
+    var nodes = [];
     var that = this;
 
     init();
@@ -45,7 +39,7 @@ Drawing.Minorb = function (options) {
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
         camera.position.z = 5000;
-
+        var nodes = [];
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;
         controls.zoomSpeed = 5.2;
@@ -66,12 +60,8 @@ Drawing.Minorb = function (options) {
 
         scene = new THREE.Scene();
 
-        // Node geometry
-        if (that.layout === "3d") {
-            geometry = new THREE.CubeGeometry(25, 25, 25);
-        } else {
-            geometry = new THREE.CubeGeometry(50, 50, 0);
-        }
+        geometry = new THREE.CubeGeometry(50, 50, 50);
+
 
         // Create node selection, if set
         if (that.selection) {
@@ -86,7 +76,15 @@ Drawing.Minorb = function (options) {
                     }
                 },
                 clicked: function (obj) {
+                    if (obj != null && obj.type == "node") {
+                        graph.getNode(obj.id).haveAHull = true;;
+                    }
+                    
+                },
+                mouseDown: function (obj) {
+                    console.log(obj);
                 }
+
             });
         }
 
@@ -117,43 +115,13 @@ Drawing.Minorb = function (options) {
      *  numNodes and numEdges.
      */
     function createGraph() {
-
         var node = new Node(0);
+        node.position.x = node.position.y = node.position.z= 0;
         node.data.title = "This is node " + node.id;
         graph.addNode(node);
         drawNode(node);
-
-        var nodes = [];
+        
         nodes.push(node);
-
-        var steps = 1;
-        while (nodes.length != 0 && steps < that.nodes_count) {
-            var node = nodes.shift();
-
-            var numEdges = randomFromTo(1, that.edges_count);
-            for (var i = 1; i <= numEdges; i++) {
-                var target_node = new Node(i * steps);
-                if (graph.addNode(target_node)) {
-                    target_node.data.title = "This is node " + target_node.id;
-
-                    drawNode(target_node);
-                    nodes.push(target_node);
-                    if (graph.addEdge(node, target_node)) {
-                        drawEdge(node, target_node);
-                    }
-                }
-            }
-            steps++;
-        }
-
-        that.layout_options.width = that.layout_options.width || 2000;
-        that.layout_options.height = that.layout_options.height || 2000;
-        that.layout_options.iterations = that.layout_options.iterations || 100000;
-        that.layout_options.layout = that.layout_options.layout || that.layout;
-        graph.layout = new Layout.ForceDirected(graph, that.layout_options);
-        graph.layout.init();
-        info_text.nodes = "Nodes " + graph.nodes.length;
-        info_text.edges = "Edges " + graph.edges.length;
     }
 
 
@@ -161,8 +129,7 @@ Drawing.Minorb = function (options) {
      *  Create a node object and add it to the scene.
      */
     function drawNode(node) {
-        var draw_object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff, opacity: 0.5 }));
-
+        var draw_object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 }));
         if (that.show_labels) {
             if (node.data.title != undefined) {
                 var label_object = new THREE.Label(node.data.title);
@@ -172,16 +139,15 @@ Drawing.Minorb = function (options) {
             node.data.label_object = label_object;
             scene.add(node.data.label_object);
         }
-
-        var area = 5000;
-        draw_object.position.x = Math.floor(Math.random() * (area + area + 1) - area);
-        draw_object.position.y = Math.floor(Math.random() * (area + area + 1) - area);
-
-        if (that.layout === "3d") {
-            draw_object.position.z = Math.floor(Math.random() * (area + area + 1) - area);
-        }
-
+       
         draw_object.id = node.id;
+        draw_object.type = "node";
+
+        var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2*Math.PI, 0, 2 * Math.PI);
+        var hull = new THREE.Mesh(hullGeometry, new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent:true }));
+        hull.type = "hull";
+        hull.position = node.position;
+        node.data.hullDrawObject = hull;
         node.data.draw_object = draw_object;
         node.position = draw_object.position;
         scene.add(node.data.draw_object);
@@ -192,7 +158,7 @@ Drawing.Minorb = function (options) {
      *  Create an edge object (line) and add it to the scene.
      */
     function drawEdge(source, target) {
-        material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 0.5 });
+        material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
 
         var tmp_geo = new THREE.Geometry();
         tmp_geo.vertices.push(source.data.draw_object.position);
@@ -220,49 +186,18 @@ Drawing.Minorb = function (options) {
 
     function render() {
         // Generate layout if not finished
-        if (!graph.layout.finished) {
-            info_text.calc = "<span style='color: red'>Calculating layout...</span>";
-            graph.layout.generate();
-        } else {
-            info_text.calc = "";
-        }
 
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].haveAHull) {
+                scene.add(nodes[i].data.hullDrawObject);
+            }
+            else {
+                scene.remove(nodes[i].hullDrawObject);
+            }
+        }
         // Update position of lines (edges)
         for (var i = 0; i < geometries.length; i++) {
             geometries[i].verticesNeedUpdate = true;
-        }
-
-
-        // Show labels if set
-        // It creates the labels when this options is set during visualization
-        if (that.show_labels) {
-            var length = graph.nodes.length;
-            for (var i = 0; i < length; i++) {
-                var node = graph.nodes[i];
-                if (node.data.label_object != undefined) {
-                    node.data.label_object.position.x = node.data.draw_object.position.x;
-                    node.data.label_object.position.y = node.data.draw_object.position.y - 100;
-                    node.data.label_object.position.z = node.data.draw_object.position.z;
-                    node.data.label_object.lookAt(camera.position);
-                } else {
-                    if (node.data.title != undefined) {
-                        var label_object = new THREE.Label(node.data.title, node.data.draw_object);
-                    } else {
-                        var label_object = new THREE.Label(node.id, node.data.draw_object);
-                    }
-                    node.data.label_object = label_object;
-                    scene.add(node.data.label_object);
-                }
-            }
-        } else {
-            var length = graph.nodes.length;
-            for (var i = 0; i < length; i++) {
-                var node = graph.nodes[i];
-                if (node.data.label_object != undefined) {
-                    scene.remove(node.data.label_object);
-                    node.data.label_object = undefined;
-                }
-            }
         }
 
         // render selection
@@ -274,7 +209,6 @@ Drawing.Minorb = function (options) {
         if (that.show_stats) {
             stats.update();
         }
-
         // render scene
         renderer.render(scene, camera);
     }
@@ -299,7 +233,5 @@ Drawing.Minorb = function (options) {
     }
 
     // Stop layout calculation
-    this.stop_calculating = function () {
-        graph.layout.stop_calculating();
-    }
+
 }

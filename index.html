@@ -21,31 +21,11 @@
     <script type="text/javascript" src="utils/TrackballControls.js"></script>
     <script type="text/javascript" src="utils/Label.js"></script>
     <script type="text/javascript" src="utils/ObjectSelection.js"></script>
-    <script type="text/javascript" src="layouts/force-directed-layout.js"></script>
-    <script type="text/javascript" src="drawings/sphere_graph.js"></script>
     <script src="drawings/mindorb.js"></script>
     <script type="text/javascript">
         var drawing;
         function createDrawing() {
-            var index = parseInt(location.search.split("?")[1]);
-            if (isNaN(index)) {
-                index = 1;
-            }
-            /* Change these values to draw more nodes (numNodes) */
-            switch (index) {
-                case 0:
-                    drawing = new Drawing.Minorb({ layout: '2d', selection: true, numNodes: 50, showStats: true, showInfo: true });
-                    break;
-                case 1:
-                    drawing = new Drawing.Minorb({ layout: '3d', selection: true, numNodes: 50, graphLayout: { attraction: 5, repulsion: 0.5 }, showStats: true, showInfo: true });
-                    break;
-                case 2:
-                    drawing = new Drawing.SphereGraph({ numNodes: 50, showStats: true, showInfo: true });
-                    break;
-                default:
-                    drawing = new Drawing.SimpleGraph({ layout: '3d', selection: true, numNodes: 50, showStats: true, showInfo: true });
-            }
-            document.getElementById("drawing_select").selectedIndex = index;
+            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true });
         }
     </script>
 
@@ -80,19 +60,8 @@
     <div id="options">
         <form>
             <p>
-                <label>Drawing</label><br>
-                <select id="drawing_select" onchange="window.location.href = '?' + this.selectedIndex;">
-                    <option>2D-Force-Directed</option>
-                    <option selected="selected">3D-Force-Directed</option>
-                    <option>Sphere Graph</option>
-                </select>
-            </p>
-            <p>
                 <input type="checkbox" id="show_labels" onclick="drawing.show_labels = this.checked;">
                 <label for="show_labels">Show labels</label>
-            </p>
-            <p>
-                <input type="button" value="Stop layout" onclick="drawing.stop_calculating();">
             </p>
         </form>
     </div>

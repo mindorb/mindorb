@@ -28,7 +28,6 @@ Drawing.Minorb = function (options) {
     var geometries = [];
     var nodes = [];
     var that = this;
-    var currentMouseX, currentMouseY; //for hull scalling
     init();
     createGraph();
     animate();
@@ -92,12 +91,11 @@ Drawing.Minorb = function (options) {
                     if (obj != null && obj.type == "hull") {
                         if (event.button == 2) { //right mouse button to start scaling
                             selectedHull = obj;
-                            currentMouseX = event.offsetX;
-                            currentMouseY = event.offsetY;
                         }   
                     }
                 },
-                mouseUp: function (obj,event) {
+                mouseUp: function (obj, event) {
+                    console.log(event.button);
                     if (event.button == 2) {
                         selectedHull = null;
                     }
@@ -253,10 +251,9 @@ Drawing.Minorb = function (options) {
 
     // Stop layout calculation
     function scaleHandler(event) {
-        
-        if (selectedHull) {
-            selectedHull.scale.add( new THREE.Vector3(event.movementX, event.movementX, event.movementX));
-            console.log();
+        if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
+            diff = event.movementX*0.01;
+            selectedHull.scale.add(new THREE.Vector3(diff,diff,diff));
         }
     }
 }

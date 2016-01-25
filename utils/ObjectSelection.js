@@ -44,18 +44,17 @@ THREE.ObjectSelection = function (parameters) {
     this.domElement.addEventListener('mousedown', onMouseDown, false);
     function onMouseDown(event) {
         if (_this.INTERSECTED) {
-            if (typeof callbackMouseDown === 'function' ) {
-                callbackMouseDown(_this.INTERSECTED,event);
+            if (typeof callbackMouseDown === 'function') {
+                callbackMouseDown(_this.INTERSECTED, event);
             }
         }
     }
     this.domElement.addEventListener('mouseup', onMouseUp, false);
     function onMouseUp(event) {
-        if (_this.INTERSECTED) {
-            if (typeof callbackMouseUp === 'function' ) {
-                callbackMouseUp(_this.INTERSECTED,event);
-            }
+        if (typeof callbackMouseUp === 'function') {
+            callbackMouseUp(_this.INTERSECTED, event);
         }
+
     }
 
     this.render = function (scene, camera) {

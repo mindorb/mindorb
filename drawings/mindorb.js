@@ -77,7 +77,7 @@ Drawing.Minorb = function (options) {
                     }
                 },
                 clicked: function (obj) {
-                    if (obj != null) {
+                    if (obj != null && !controls.enabled) {
                         if (obj.type == "node") {
                             graph.nodes[obj.nodeID].haveAHull = true;
                             graph.nodes[obj.nodeID].data.draw_object.add(graph.nodes[obj.nodeID].data.hullDrawObject);

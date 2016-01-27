@@ -176,9 +176,9 @@ Drawing.Minorb = function (options) {
         node.data.draw_object = draw_object;
         draw_object.position = new THREE.Vector3( node.position.x,node.position.y,node.position.z);
 //        draw_object.position.sub(parentObject.position);
-        
+        draw_object.position=  parentObject.worldToLocal(draw_object.position);
         parentObject.add(node.data.draw_object);
-        //draw_object.worldToLocal(parentObject.position);
+        //
     
     }
 

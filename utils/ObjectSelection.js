@@ -1,3 +1,4 @@
+/// <reference path="../webgl-frameworks/Three.js" />
 /**
   @author David Piegza
 
@@ -14,11 +15,10 @@
 
 THREE.ObjectSelection = function (parameters) {
     var parameters = parameters || {};
-
+    this.point = null;
     this.domElement = parameters.domElement || document;
     this.projector = new THREE.Projector();
     this.INTERSECTED;
-
     var _this = this;
 
     var callbackSelected = parameters.selected;
@@ -54,7 +54,6 @@ THREE.ObjectSelection = function (parameters) {
         if (typeof callbackMouseUp === 'function') {
             callbackMouseUp(_this.INTERSECTED, event);
         }
-
     }
 
     this.render = function (scene, camera) {
@@ -72,6 +71,7 @@ THREE.ObjectSelection = function (parameters) {
                 }
 
                 this.INTERSECTED = intersects[0].object;
+                this.INTERSECTED.intersectionPoint = intersects[0].point;
                 this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
                 this.INTERSECTED.material.color.setHex(0xff0000);
                 if (typeof callbackSelected === 'function') {
@@ -79,6 +79,7 @@ THREE.ObjectSelection = function (parameters) {
                 }
             }
         } else {
+
             if (this.INTERSECTED) {
                 this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
             }
@@ -87,5 +88,6 @@ THREE.ObjectSelection = function (parameters) {
                 callbackSelected(this.INTERSECTED);
             }
         }
+
     }
 }

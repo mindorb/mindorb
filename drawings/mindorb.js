@@ -13,7 +13,7 @@ var Drawing = Drawing || {};
 
 Drawing.Minorb = function (options) {
     var options = options || {};
-
+    id = 1;
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
@@ -24,7 +24,7 @@ Drawing.Minorb = function (options) {
     var info_text = {};
     var graph = new Graph({ limit: options.limit });
     var selectedHull = null;
-    
+    var selectableContainer;
     var geometries = [];
     var nodes = [];
     var that = this;
@@ -49,7 +49,7 @@ Drawing.Minorb = function (options) {
         controls.noPan = false;
 
         controls.staticMoving = false;
-        
+
         controls.dynamicDampingFactor = 0.3;
 
         controls.keys = [65, 83, 68];
@@ -59,9 +59,7 @@ Drawing.Minorb = function (options) {
 
 
         scene = new THREE.Scene();
-
         geometry = new THREE.CubeGeometry(50, 50, 50);
-
 
         // Create node selection, if set
         if (that.selection) {
@@ -70,7 +68,9 @@ Drawing.Minorb = function (options) {
                 selected: function (obj) {
                     // display info
                     if (obj != null) {
-                        info_text.select = "Object " + obj.id;
+                        if (obj.type == "node") {
+                            info_text.select = "Object " + obj.id;
+                        }
                     } else {
                         delete info_text.select;
                     }
@@ -78,33 +78,39 @@ Drawing.Minorb = function (options) {
                 clicked: function (obj) {
                     if (obj != null) {
                         if (obj.type == "node") {
-                            graph.getNode(obj.id).haveAHull = true;
+                            graph.nodes[obj.nodeID].haveAHull = true;
+                            graph.nodes[obj.nodeID].data.draw_object.add(graph.nodes[obj.nodeID].data.hullDrawObject);
                         }
-                        else if(obj.type=="hull"){
-                            //TODO create new Node at intersection
+                        else if (obj.type == "hull") {
+                            parent = graph.getNode(obj.nodeID);
+                            node = new Node(id++);
+                            console.log(obj);
+                            node.position = obj.intersectionPoint;
+                            drawNode(node, parent.data.draw_object);
+                            graph.addNode(node);
+                            graph.addEdge(parent, node);
+                            drawEdge(parent, node);
+                            nodes.push(node);
                         }
                     }
-                    
+
                 },
                 mouseDown: function (obj, event) {
                     /// <param name="event" type="MouseEvent">clickEvent</param>
                     if (obj != null && obj.type == "hull") {
                         if (event.button == 2) { //right mouse button to start scaling
                             selectedHull = obj;
-                        }   
+                        }
                     }
                 },
                 mouseUp: function (obj, event) {
-                    console.log(event.button);
                     if (event.button == 2) {
                         selectedHull = null;
                     }
                 }
-
-
             });
         }
-        document.addEventListener("mousemove",scaleHandler);
+        document.addEventListener("mousemove", scaleHandler);
         document.body.appendChild(renderer.domElement);
 
         // Stats.js
@@ -133,19 +139,20 @@ Drawing.Minorb = function (options) {
      */
     function createGraph() {
         var node = new Node(0);
-        node.position.x = node.position.y = node.position.z= 0;
+        node.position.x = node.position.y = node.position.z = 0;
         node.data.title = "This is node " + node.id;
         graph.addNode(node);
         drawNode(node);
-        
-        nodes.push(node);
+        selectableContainer = node.data.draw_object;
+        //nodes.push(node);
     }
 
 
     /**
      *  Create a node object and add it to the scene.
      */
-    function drawNode(node) {
+    function drawNode(node, parentObject) {
+        parentObject = parentObject || scene;
         var draw_object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 }));
         if (that.show_labels) {
             if (node.data.title != undefined) {
@@ -156,18 +163,19 @@ Drawing.Minorb = function (options) {
             node.data.label_object = label_object;
             scene.add(node.data.label_object);
         }
-       
-        draw_object.id = node.id;
+
+        draw_object.nodeID = node.id;
         draw_object.type = "node";
 
-        var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2*Math.PI, 0, 2 * Math.PI);
-        var hull = new THREE.Mesh(hullGeometry, new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent:true }));
+        var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2 * Math.PI, 0, 2 * Math.PI);
+        var hull = new THREE.Mesh(hullGeometry, new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true }));
         hull.type = "hull";
         hull.position = node.position;
+        hull.nodeID = node.id;
         node.data.hullDrawObject = hull;
         node.data.draw_object = draw_object;
-        node.position = draw_object.position;
-        scene.add(node.data.draw_object);
+        draw_object.position = node.position;
+        parentObject.add(node.data.draw_object);
     }
 
 
@@ -184,9 +192,8 @@ Drawing.Minorb = function (options) {
         line = new THREE.Line(tmp_geo, material, THREE.LinePieces);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
-
+        line.type = "line";
         geometries.push(tmp_geo);
-
         scene.add(line);
     }
 
@@ -203,31 +210,26 @@ Drawing.Minorb = function (options) {
 
     function render() {
         // Generate layout if not finished
+        
 
-        for (var i = 0; i < nodes.length; i++) {
-            if (nodes[i].haveAHull) {
-                scene.add(nodes[i].data.hullDrawObject);
-            }
-            else {
-                scene.remove(nodes[i].hullDrawObject);
-            }
-        }
-        // Update position of lines (edges)
-        for (var i = 0; i < geometries.length; i++) {
-            geometries[i].verticesNeedUpdate = true;
-        }
 
         // render selection
         if (that.selection) {
-            object_selection.render(scene, camera);
+            object_selection.render(selectableContainer, camera);
         }
 
         // update stats
         if (that.show_stats) {
             stats.update();
         }
+        
         // render scene
-        renderer.render(scene, camera);
+        try{
+            renderer.render(scene, camera);
+        }
+        catch (e) {
+            debugger;
+        }
     }
 
     /**
@@ -252,8 +254,8 @@ Drawing.Minorb = function (options) {
     // Stop layout calculation
     function scaleHandler(event) {
         if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
-            diff = event.movementX*0.01;
-            selectedHull.scale.add(new THREE.Vector3(diff,diff,diff));
+            diff = event.movementX * 0.01;
+            selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
         }
     }
 }

@@ -68,6 +68,7 @@ Drawing.Minorb = function (options) {
                 selected: function (obj) {
                     // display info
                     if (obj != null) {
+                        console.log(obj.intersectionPoint);
                         if (obj.type == "node") {
                             info_text.select = "Object " + obj.id;
                         }
@@ -85,7 +86,7 @@ Drawing.Minorb = function (options) {
                             parent = graph.getNode(obj.nodeID);
                             node = new Node(id++);
                             console.log(obj);
-                            node.position = obj.intersectionPoint;
+                            node.position = obj.intersectionPoint.clone();
                             drawNode(node, parent.data.draw_object);
                             graph.addNode(node);
                             graph.addEdge(parent, node);
@@ -184,11 +185,9 @@ Drawing.Minorb = function (options) {
      */
     function drawEdge(source, target) {
         material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
-
         var tmp_geo = new THREE.Geometry();
         tmp_geo.vertices.push(source.data.draw_object.position);
         tmp_geo.vertices.push(target.data.draw_object.position);
-
         line = new THREE.Line(tmp_geo, material, THREE.LinePieces);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
@@ -196,8 +195,6 @@ Drawing.Minorb = function (options) {
         geometries.push(tmp_geo);
         scene.add(line);
     }
-
-
     function animate() {
         requestAnimationFrame(animate);
         controls.update();

@@ -20,7 +20,7 @@ THREE.ObjectSelection = function (parameters) {
     this.projector = new THREE.Projector();
     this.INTERSECTED;
     var _this = this;
-
+    var base = null;
     var callbackSelected = parameters.selected;
     var callbackClicked = parameters.clicked;
     var callbackMouseDown = parameters.mouseDown;
@@ -37,6 +37,7 @@ THREE.ObjectSelection = function (parameters) {
     function onDocumentMouseClick(event) {
         if (_this.INTERSECTED) {
             if (typeof callbackClicked === 'function') {
+                
                 callbackClicked(_this.INTERSECTED);
             }
         }
@@ -57,6 +58,7 @@ THREE.ObjectSelection = function (parameters) {
     }
 
     this.render = function (scene, camera) {
+        base = scene;
         var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
         this.projector.unprojectVector(vector, camera);
 
@@ -65,13 +67,18 @@ THREE.ObjectSelection = function (parameters) {
         var intersects = raycaster.intersectObject(scene, true);
 
         if (intersects.length > 0) {
+            if (this.INTERSECTED) {
+                this.INTERSECTED.intersectionPoint = intersects[0].point;
+                /*  this is put here to make sure the point of intersection is alwaays correct 
+                    since the intersection point was only updated on entry of the hull
+                */
+            }
             if (this.INTERSECTED != intersects[0].object) {
                 if (this.INTERSECTED) {
                     this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
                 }
 
                 this.INTERSECTED = intersects[0].object;
-                this.INTERSECTED.intersectionPoint = intersects[0].point;
                 this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
                 this.INTERSECTED.material.color.setHex(0xff0000);
                 if (typeof callbackSelected === 'function') {

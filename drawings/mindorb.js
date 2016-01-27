@@ -79,7 +79,7 @@ Drawing.Minorb = function (options) {
                 clicked: function (obj) {
                     if (obj != null && !controls.enabled) {
                         if (obj.type == "node") {
-                            graph.nodes[obj.nodeID].haveAHull = true;
+                            //graph.nodes[obj.nodeID].haveAHull = true;
                             graph.nodes[obj.nodeID].data.draw_object.add(graph.nodes[obj.nodeID].data.hullDrawObject);
                         }
                         else if (obj.type == "hull") {
@@ -164,19 +164,22 @@ Drawing.Minorb = function (options) {
             node.data.label_object = label_object;
             scene.add(node.data.label_object);
         }
-
         draw_object.nodeID = node.id;
         draw_object.type = "node";
-
+        
         var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2 * Math.PI, 0, 2 * Math.PI);
         var hull = new THREE.Mesh(hullGeometry, new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true }));
         hull.type = "hull";
-        hull.position = node.position;
+        hull.position = new THREE.Vector3(0,0,0);
         hull.nodeID = node.id;
         node.data.hullDrawObject = hull;
         node.data.draw_object = draw_object;
-        draw_object.position = node.position;
+        draw_object.position = new THREE.Vector3( node.position.x,node.position.y,node.position.z);
+//        draw_object.position.sub(parentObject.position);
+        
         parentObject.add(node.data.draw_object);
+        //draw_object.worldToLocal(parentObject.position);
+    
     }
 
 

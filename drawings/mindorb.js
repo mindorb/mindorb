@@ -189,8 +189,8 @@ Drawing.Minorb = function (options) {
     function drawEdge(source, target) {
         material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
         var tmp_geo = new THREE.Geometry();
-        tmp_geo.vertices.push(source.data.draw_object.position);
-        tmp_geo.vertices.push(target.data.draw_object.position);
+        tmp_geo.vertices.push(source.position);
+        tmp_geo.vertices.push(target.position);
         line = new THREE.Line(tmp_geo, material, THREE.LinePieces);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
@@ -211,8 +211,6 @@ Drawing.Minorb = function (options) {
     function render() {
         // Generate layout if not finished
         
-
-
         // render selection
         if (that.selection) {
             object_selection.render(selectableContainer, camera);

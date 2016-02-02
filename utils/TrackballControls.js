@@ -347,7 +347,6 @@ THREE.TrackballControls = function (object, domElement) {
 
     function keydown(event) {
         if (event.keyCode == 67/*'c'*/) {
-            console.log("test");
             _this.enabled = true;
         }
         if (_this.enabled === false) return;

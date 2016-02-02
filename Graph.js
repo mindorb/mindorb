@@ -74,7 +74,7 @@ Graph.prototype.addEdge = function (source, target) {
     if (source.addConnectedTo(target) === true) {
         var edge = new Edge(source, target);
         this.edges.push(edge);
-        return true;
+        return edge;
     }
     return false;
 };
@@ -91,7 +91,7 @@ function Node(node_id) {
     this.id = node_id;
     this.nodesTo = [];
     this.nodesFrom = [];
-    this.position = { x: 0, y: 0, z: 0 };
+    this.position = new THREE.Vector3(0, 0, 0 );
     this.data = {};
 }
 
@@ -118,4 +118,14 @@ function Edge(source, target) {
     this.source = source;
     this.target = target;
     this.data = {};
+}
+Graph.prototype.getConnectedEdges = function (nodeID) {
+    connectedEdges = [];
+    node = this.getNode(nodeID);
+    for (var i = 0; i < this.edges.length; i++) {
+        if (this.edges[i].source == node || this.edges[i].target == node) {
+            connectedEdges.push(this.edges[i]);
+        }
+    }
+    return connectedEdges;
 }

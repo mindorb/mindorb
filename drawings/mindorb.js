@@ -13,7 +13,7 @@ var Drawing = Drawing || {};
 
 Drawing.Minorb = function (options) {
     var options = options || {};
-    id = 1;
+    var id = 1;
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
@@ -40,6 +40,7 @@ Drawing.Minorb = function (options) {
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
+//        camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
         camera.position.z = 5000;
         var nodes = [];
         controls = new THREE.TrackballControls(camera);
@@ -90,10 +91,13 @@ Drawing.Minorb = function (options) {
                             node = new Node(id++);
                             node.position = obj.intersectionPoint.clone();
                             drawNode(node, obj);
+                            //node.data.draw_object.scale = new THREE.Vector3(1 / obj.scale.x, 1 / 1 / obj.scale.y, 1 / 1 / obj.scale.z);
+
                             graph.addNode(node);
                             edge = graph.addEdge(parent, node);
-                            drawEdge(edge);
-                            nodes.push(node);
+                            //drawEdge(edge);
+                            redrawEdges = true;
+                            
                         }
                     }
 
@@ -195,13 +199,19 @@ Drawing.Minorb = function (options) {
      *  Create an edge object (line) and add it to the scene.
      */
     function drawEdge(edge) {
-        //
-        source = edge.source;
-        target = edge.target;
+        source = edge.source.data.draw_object.position.clone();
+        target = edge.target.data.draw_object.position.clone();
+
+        source.applyMatrix4(edge.source.data.draw_object.parent.matrixWorld);        
+        target.applyMatrix4(edge.target.data.draw_object.parent.matrixWorld);
+        var midPoint = new THREE.Vector3();
+        //midPoint = source.add(target).divideScalar(2);
+        
         material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
         var tmp_geo = new THREE.Geometry();
-        tmp_geo.vertices.push(source.position);
-        tmp_geo.vertices.push(target.position);
+
+        tmp_geo.vertices.push(source);
+        tmp_geo.vertices.push(target);
         line = new THREE.Line(tmp_geo, material, THREE.LinePieces);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
@@ -223,22 +233,13 @@ Drawing.Minorb = function (options) {
     function render() {
         // Generate layout if not finished
         if (redrawEdges) {
+            redrawEdges = false;
             scene.remove(edges);
             edges = new THREE.Object3D();
-            
-            for (var i = 0; i < graph.nodes.length; i++) {
-                if (i == 0) {
-                    absolutePosition = new THREE.Vector3(children[i].position.x, children[i].position.y, children[i].position.z).applyMatrix4(children[i].matrixWorld);
-                    graph.getNode(children[i].nodeID).position.x = absolutePosition.x;
-                    graph.getNode(children[i].nodeID).position.y = absolutePosition.y;
-                    graph.getNode(children[i].nodeID).position.z = absolutePosition.z;
-                }
-                
+            for (var i = 0; i < graph.edges.length; i++) {
+                drawEdge(graph.edges[i]);
             }
-            
-
             scene.add(edges);
-            redrawEdges = false;
         }
         // render selection
         if (that.selection) {
@@ -280,6 +281,8 @@ Drawing.Minorb = function (options) {
 
     // Stop layout calculation
     function scaleHandler(event) {
+        a = new THREE.Vector3();
+        a.clone();
         if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
             diff = event.movementX * 0.01;
             selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
@@ -292,4 +295,5 @@ Drawing.Minorb = function (options) {
             }
         }
     }
+    
 }

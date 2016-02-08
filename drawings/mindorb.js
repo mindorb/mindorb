@@ -204,20 +204,38 @@ Drawing.Minorb = function (options) {
 
         source.applyMatrix4(edge.source.data.draw_object.parent.matrixWorld);        
         target.applyMatrix4(edge.target.data.draw_object.parent.matrixWorld);
-        var midPoint = new THREE.Vector3();
+        var controlPoint1 = source.clone();
+        var controlPoint2 = target.clone();
+        deltax = Math.abs(source.x - target.x);
+        deltay = Math.abs(source.y - target.y);
+        deltaz = Math.abs(source.z - target.z);
+        
         //midPoint = source.add(target).divideScalar(2);
         
         material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
-        var tmp_geo = new THREE.Geometry();
+        if (deltax > deltay && deltax > deltaz) {
+            controlPoint1.x = target.x;
+            controlPoint2.x = source.x;
 
-        tmp_geo.vertices.push(source);
-        tmp_geo.vertices.push(target);
-        line = new THREE.Line(tmp_geo, material, THREE.LinePieces);
+        }
+        if (deltaz > deltay && deltaz > deltay) {
+            controlPoint1.z = target.z;
+            controlPoint2.z = source.z;
+        }
+        if (deltay > deltaz && deltay > deltax) {
+            controlPoint1.z = target.z;
+            controlPoint2.z = source.z;
+        }
+        var curve = new THREE.CubicBezierCurve3(source, controlPoint1, controlPoint2, target);
+
+        var geometry = new THREE.Geometry();
+        geometry.vertices = curve.getPoints(50);
+
+        line = new THREE.Line(geometry, material);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
         line.type = "line";
         edge.data.drawObject = line;
-        geometries.push(tmp_geo);
         edges.add(line);
     }
     function animate() {

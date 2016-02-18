@@ -17,18 +17,19 @@ Drawing.Minorb = function (options) {
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
-    this.selection = options.selection || false;
+    this.limit = options.limit || 1000;
+    this.selection = true;
+    this.lineVertex = options.lineVert;
+    this.lineFrag = options.lineFrag;
+    this.lineMaterial = null;
     var redrawEdges = false;
     var camera, controls, scene, renderer, interaction, geometry, object_selection;
     var stats;
     var info_text = {};
-    var graph = new Graph({ limit: options.limit });
+    var graph = new Graph({ limit: this.limit });
     var selectedHull = null;
-    var selectableContainer;
-    var geometries = [];
-    var nodes = [];
-    var edges ;
-
+    var edges;
+    var hulls;
     var that = this;
     init();
     createGraph();
@@ -40,7 +41,7 @@ Drawing.Minorb = function (options) {
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
-//        camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
+        //        camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
         camera.position.z = 5000;
         var nodes = [];
         controls = new THREE.TrackballControls(camera);
@@ -67,57 +68,55 @@ Drawing.Minorb = function (options) {
         geometry = new THREE.CubeGeometry(50, 50, 50);
 
         // Create node selection, if set
-        if (that.selection) {
-            object_selection = new THREE.ObjectSelection({
-                domElement: renderer.domElement,
-                selected: function (obj) {
-                    // display info
-                    if (obj != null) {
-                        if (obj.type == "node") {
-                            info_text.select = "Object " + obj.id;
-                        }
-                    } else {
-                        delete info_text.select;
+        object_selection = new THREE.ObjectSelection({
+            domElement: renderer.domElement,
+            selected: function (obj) {
+                // display info
+                if (obj != null) {
+                    if (obj.type == "node") {
+                        info_text.select = "Object " + obj.id;
                     }
-                },
-                clicked: function (obj) {
-                    if (obj != null && !controls.enabled) {
-                        if (obj.type == "node") {
-                            //graph.nodes[obj.nodeID].haveAHull = true;
-                            graph.nodes[obj.nodeID].data.draw_object.add(graph.nodes[obj.nodeID].data.hullDrawObject);
-                        }
-                        else if (obj.type == "hull") {
-                            parent = graph.getNode(obj.nodeID);
-                            node = new Node(id++);
-                            node.position = obj.intersectionPoint.clone();
-                            drawNode(node, obj);
-                            //node.data.draw_object.scale = new THREE.Vector3(1 / obj.scale.x, 1 / 1 / obj.scale.y, 1 / 1 / obj.scale.z);
+                } else {
+                    delete info_text.select;
+                }
+            },
+            clicked: function (obj) {
+                if (obj != null && !controls.enabled) {
+                    if (obj.type == "node") {
+                        //graph.nodes[obj.nodeID].haveAHull = true;
+                        graph.nodes[obj.nodeID].data.draw_object.add(graph.nodes[obj.nodeID].data.hullDrawObject);
+                    }
+                    else if (obj.type == "hull") {
+                        parent = graph.getNode(obj.nodeID);
+                        node = new Node(id++);
+                        node.position = obj.intersectionPoint.clone();
+                        drawNode(node, obj);
+                        //node.data.draw_object.scale = new THREE.Vector3(1 / obj.scale.x, 1 / 1 / obj.scale.y, 1 / 1 / obj.scale.z);
 
-                            graph.addNode(node);
-                            edge = graph.addEdge(parent, node);
-                            //drawEdge(edge);
-                            redrawEdges = true;
-                            
-                        }
-                    }
-
-                },
-                mouseDown: function (obj, event) {
-                    /// <param name="event" type="MouseEvent">clickEvent</param>
-                    if (obj != null && obj.type == "hull") {
-                        if (event.button == 2) { //right mouse button to start scaling
-                            selectedHull = obj;
-                        }
-                    }
-                },
-                mouseUp: function (obj, event) {
-                    if (event.button == 2) {
-                        selectedHull = null;
+                        graph.addNode(node);
+                        edge = graph.addEdge(parent, node);
+                        //drawEdge(edge);
+                        redrawEdges = true;
 
                     }
                 }
-            });
-        }
+
+            },
+            mouseDown: function (obj, event) {
+                /// <param name="event" type="MouseEvent">clickEvent</param>
+                if (obj != null && obj.type == "hull") {
+                    if (event.button == 2) { //right mouse button to start scaling
+                        selectedHull = obj;
+                    }
+                }
+            },
+            mouseUp: function (obj, event) {
+                if (event.button == 2) {
+                    selectedHull = null;
+
+                }
+            }
+        });
         document.addEventListener("mousemove", scaleHandler);
         document.body.appendChild(renderer.domElement);
 
@@ -201,22 +200,18 @@ Drawing.Minorb = function (options) {
     function drawEdge(edge) {
         source = edge.source.data.draw_object.position.clone();
         target = edge.target.data.draw_object.position.clone();
-
-        source.applyMatrix4(edge.source.data.draw_object.parent.matrixWorld);        
+        source.applyMatrix4(edge.source.data.draw_object.parent.matrixWorld);
         target.applyMatrix4(edge.target.data.draw_object.parent.matrixWorld);
+
         var controlPoint1 = source.clone();
         var controlPoint2 = target.clone();
         deltax = Math.abs(source.x - target.x);
         deltay = Math.abs(source.y - target.y);
         deltaz = Math.abs(source.z - target.z);
-        
-        //midPoint = source.add(target).divideScalar(2);
-        
-        material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 5 });
+        material = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
         if (deltax > deltay && deltax > deltaz) {
             controlPoint1.x = target.x;
             controlPoint2.x = source.x;
-
         }
         if (deltaz > deltay && deltaz > deltay) {
             controlPoint1.z = target.z;
@@ -227,16 +222,30 @@ Drawing.Minorb = function (options) {
             controlPoint2.z = source.z;
         }
         var curve = new THREE.CubicBezierCurve3(source, controlPoint1, controlPoint2, target);
-
         var geometry = new THREE.Geometry();
-        geometry.vertices = curve.getPoints(50);
+        geometry.vertices = curve.getPoints(20);
+        edge.data.drawObject = new THREE.Object3D();
+        for (var i = 0; i < geometry.vertices.length-1; i++) {
+            direction = geometry.vertices[i].clone().sub(geometry.vertices[i + 1]);
+            height = direction.length();
+            var segment = new THREE.CylinderGeometry(50 / i, 50/ (i + 1), height, 10, 1);
+            cylinder = new THREE.Mesh(segment, material);
+            cylinder.position = geometry.vertices[i];
+            var focalPoint = new THREE.Vector3(
+                cylinder.position.x + direction.x,
+                cylinder.position.y + direction.y,
+                cylinder.position.z + direction.z
+            ); 
+            cylinder.lookAt(focalPoint);
+            cylinder.rotateX(Math.PI/2);
+            edge.data.drawObject.add(cylinder);
+        }                            
 
         line = new THREE.Line(geometry, material);
         line.scale.x = line.scale.y = line.scale.z = 1;
         line.originalScale = 1;
         line.type = "line";
-        edge.data.drawObject = line;
-        edges.add(line);
+        edges.add(edge.data.drawObject);
     }
     function animate() {
         requestAnimationFrame(animate);
@@ -304,14 +313,38 @@ Drawing.Minorb = function (options) {
         if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
             diff = event.movementX * 0.01;
             selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
+
+            var absoluteScale = new THREE.Vector3(),
+                parentAbsoulteScale = new THREE.Vector3();
+            selectedHull.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), absoluteScale);
+            selectedHull.parent.parent.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), parentAbsoulteScale);
+            if (selectedHull.parent.parent.type == "hull" &&
+                parentAbsoulteScale.multiplyScalar(.5).length() < absoluteScale.length()) {
+                selectedHull.parent.parent.scale.add(new THREE.Vector3(diff , diff, diff ));
+                children = selectedHull.parent.parent.children;
+                for (var i = 0; i < children.length; i++) {
+                    children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
+                }
+                //selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
+
+            }
+
             if (children = selectedHull.children) {
                 redrawEdges = true;
             }
-            parentNode = graph.getNode( selectedHull.nodeID);
             for (var i = 0; i < children.length; i++) {
                 children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
             }
         }
     }
-    
+    function initializeLineMaterial() {
+        that.lineMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+
+            },
+            vertexShader: that.lineVertex,
+            fragmentShader: that.lineFrag,
+            side: THREE.FrontSide
+        });
+        }
 }

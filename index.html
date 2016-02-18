@@ -1,19 +1,40 @@
 <!--
-  This is an example html file with some options added. The minimum html file for
-  the graph visualization is:
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Graph Visualization</title>
-      <script type="text/javascript" src="build/graph.min.js"></script>
-    </head>
-    <body onload="new Drawing.SimpleGraph({layout: '3d', showStats: true, showInfo: true})">
-    </bod>
-  </html>
+
+    platformRenderingMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    textureMap: { type: 't', value: THREE.ImageUtils.loadTexture('matcap1.jpg') },
+                    normalMap: { type: 't', value: null },
+                    normalScale: { type: 'f', value: 1 },
+                    texScale: { type: 'f', value: 5 },
+                    useSSS: { type: 'f', value: 1 },
+                    useScreen: { type: 'f', value: 0 },
+                    color: { type: 'c', value: new THREE.Color(18. / 255., 72. / 255., 85. / 255.) }
+                },
+                vertexShader: document.getElementById('vertexShader').textContent,
+                fragmentShader: document.getElementById('fragmentShader').textContent,
+                side: THREE.FrontSide
+            });
 -->
 <!DOCTYPE html>
 <html>
 <head>
+    <script id="LineVert" type="shader">
+        varying vec2 vUv;
+        void main() {
+        vUv = uv;
+        mat4 mvp =modelViewMatrix;
+        float4 position = mvp *vec4(position,1.0 ); 
+        gl_Position= projectionMatrix * position;
+        }
+    </script>
+    <script id="LineFrag" type="shader">
+        precision highp float;
+        varying vec2 vUv;
+        uniform float color;
+        void main(void) {
+        gl_FragColor = vec4(vec3(color), 1.0);
+        }
+    </script>
     <title>Graph Visualization</title>
     <script src="Graph.js"></script>
     <script src="webgl-frameworks/three.min.js"></script>
@@ -25,7 +46,11 @@
     <script type="text/javascript">
         var drawing;
         function createDrawing() {
-            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true });
+            var vert = document.getElementById("LineVert");
+            var frag = document.getElementById("LineFrag");
+            console.log(vert);
+            console.log(frag);
+            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true, lineVert :vert,lineFrag:frag});
         }
     </script>
 

@@ -56,7 +56,7 @@ THREE.ObjectSelection = function (parameters) {
             callbackMouseUp(_this.INTERSECTED, event);
         }
     }
-
+    i = 0;
     this.render = function (scene, camera) {
         base = scene;
         var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
@@ -65,15 +65,19 @@ THREE.ObjectSelection = function (parameters) {
         var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
         var intersects = raycaster.intersectObject(scene, true);
-
+        var i = 1;
+        while (intersects.length > 0 && intersects[0].object && intersects[0].object.type == "edge") {
+            intersects.splice(0,1);
+        }
         if (intersects.length > 0) {
             if (this.INTERSECTED) {
+                console.log(intersects[0].object.type);
                 this.INTERSECTED.intersectionPoint = intersects[0].point;
                 /*  this is put here to make sure the point of intersection is alwaays correct 
                     since the intersection point was only updated on entry of the hull
                 */
             }
-            if (this.INTERSECTED != intersects[0].object) {
+            if (this.INTERSECTED != intersects[0].object && intersects[0].object.type!="edge") {
                 if (this.INTERSECTED) {
                     this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
                 }

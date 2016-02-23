@@ -28,7 +28,7 @@ Drawing.Minorb = function (options) {
     var info_text = {};
     var graph = new Graph({ limit: this.limit });
     var selectedHull = null;
-    var edges;
+    var edges=[];
     var hulls;
     var that = this;
     init();
@@ -37,6 +37,7 @@ Drawing.Minorb = function (options) {
 
     function init() {
         // Three.js initialization
+        initializeLineMaterial();
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -63,9 +64,9 @@ Drawing.Minorb = function (options) {
 
 
         scene = new THREE.Scene();
-        edges = new THREE.Object3D();
-        scene.add(edges);
         geometry = new THREE.CubeGeometry(50, 50, 50);
+        window.addEventListener('keydown', keyDownHandler, false);
+        window.addEventListener('keyup', keyUpHandler, false);
 
         // Create node selection, if set
         object_selection = new THREE.ObjectSelection({
@@ -95,8 +96,8 @@ Drawing.Minorb = function (options) {
 
                         graph.addNode(node);
                         edge = graph.addEdge(parent, node);
-                        //drawEdge(edge);
-                        redrawEdges = true;
+                        drawEdge(edge);
+                        //redrawEdges = true;
 
                     }
                 }
@@ -200,52 +201,35 @@ Drawing.Minorb = function (options) {
     function drawEdge(edge) {
         source = edge.source.data.draw_object.position.clone();
         target = edge.target.data.draw_object.position.clone();
-        source.applyMatrix4(edge.source.data.draw_object.parent.matrixWorld);
-        target.applyMatrix4(edge.target.data.draw_object.parent.matrixWorld);
+        direction = target.sub(source);
+        height = direction.length();
+        lineGeometry = new THREE.CylinderGeometry(height/2, height/2, height, 2, 1);
 
-        var controlPoint1 = source.clone();
-        var controlPoint2 = target.clone();
-        deltax = Math.abs(source.x - target.x);
-        deltay = Math.abs(source.y - target.y);
-        deltaz = Math.abs(source.z - target.z);
-        material = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
-        if (deltax > deltay && deltax > deltaz) {
-            controlPoint1.x = target.x;
-            controlPoint2.x = source.x;
-        }
-        if (deltaz > deltay && deltaz > deltay) {
-            controlPoint1.z = target.z;
-            controlPoint2.z = source.z;
-        }
-        if (deltay > deltaz && deltay > deltax) {
-            controlPoint1.z = target.z;
-            controlPoint2.z = source.z;
-        }
-        var curve = new THREE.CubicBezierCurve3(source, controlPoint1, controlPoint2, target);
-        var geometry = new THREE.Geometry();
-        geometry.vertices = curve.getPoints(20);
-        edge.data.drawObject = new THREE.Object3D();
-        for (var i = 0; i < geometry.vertices.length-1; i++) {
-            direction = geometry.vertices[i].clone().sub(geometry.vertices[i + 1]);
-            height = direction.length();
-            var segment = new THREE.CylinderGeometry(50 / i, 50/ (i + 1), height, 10, 1);
-            cylinder = new THREE.Mesh(segment, material);
-            cylinder.position = geometry.vertices[i];
-            var focalPoint = new THREE.Vector3(
-                cylinder.position.x + direction.x,
-                cylinder.position.y + direction.y,
-                cylinder.position.z + direction.z
-            ); 
-            cylinder.lookAt(focalPoint);
-            cylinder.rotateX(Math.PI/2);
-            edge.data.drawObject.add(cylinder);
-        }                            
+        //var lineGeometry = new THREE.Geometry();
 
-        line = new THREE.Line(geometry, material);
-        line.scale.x = line.scale.y = line.scale.z = 1;
-        line.originalScale = 1;
-        line.type = "line";
-        edges.add(edge.data.drawObject);
+        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
+        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
+        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
+        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
+        //lineGeometry.faces.push(new THREE.Face3(0, 1, 2)); // counter-clockwise winding order
+        //lineGeometry.faces.push(new THREE.Face3(0, 2, 3));
+        //lineGeometry.computeFaceNormals();
+        //lineGeometry.computeVertexNormals();
+
+        //that.lineMaterial.side = THREE.DoubleSide;
+        cylinder = new THREE.Mesh(lineGeometry, that.lineMaterial);
+        var focalPoint = new THREE.Vector3(
+            cylinder.position.x + direction.x / 2,
+            cylinder.position.y + direction.y / 2,
+            cylinder.position.z + direction.z / 2
+        );
+        console.log(cylinder.geometry.vertices); 
+        cylinder.lookAt(focalPoint);
+        cylinder.position = focalPoint
+        cylinder.rotateX(Math.PI / 2);
+        cylinder.type = "edge";
+        edge.source.data.hullDrawObject.add(cylinder);
+        edges.push(cylinder);
     }
     function animate() {
         requestAnimationFrame(animate);
@@ -258,16 +242,7 @@ Drawing.Minorb = function (options) {
 
 
     function render() {
-        // Generate layout if not finished
-        if (redrawEdges) {
-            redrawEdges = false;
-            scene.remove(edges);
-            edges = new THREE.Object3D();
-            for (var i = 0; i < graph.edges.length; i++) {
-                drawEdge(graph.edges[i]);
-            }
-            scene.add(edges);
-        }
+
         // render selection
         if (that.selection) {
             object_selection.render(selectableContainer, camera);
@@ -320,31 +295,42 @@ Drawing.Minorb = function (options) {
             selectedHull.parent.parent.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), parentAbsoulteScale);
             if (selectedHull.parent.parent.type == "hull" &&
                 parentAbsoulteScale.multiplyScalar(.5).length() < absoluteScale.length()) {
-                selectedHull.parent.parent.scale.add(new THREE.Vector3(diff , diff, diff ));
+                selectedHull.parent.parent.scale.add(new THREE.Vector3(diff, diff, diff));
                 children = selectedHull.parent.parent.children;
                 for (var i = 0; i < children.length; i++) {
-                    children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
+                     children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
                 }
-                //selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
 
             }
-
-            if (children = selectedHull.children) {
-                redrawEdges = true;
-            }
+            children = selectedHull.children;
             for (var i = 0; i < children.length; i++) {
-                children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
+                if (children[i].type == "node") children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
             }
         }
     }
     function initializeLineMaterial() {
         that.lineMaterial = new THREE.ShaderMaterial({
             uniforms: {
+                start: { type: '4fv', value: new THREE.Vector4(0.0, 0.0, 0.0) },
+                end: { type: '4fv', value: new THREE.Vector4(1.0, 1.0, 1.0) },
+                color: { type: 'c', value: new THREE.Color(1.0, 0.0, 0.0, 0.0) },
 
             },
             vertexShader: that.lineVertex,
             fragmentShader: that.lineFrag,
             side: THREE.FrontSide
         });
+    }
+    function keyDownHandler(event) {
+        if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
+            controls.enabled = true;
         }
+        console.log(event.keyCode);
+    }
+    function keyUpHandler(event) {
+        if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
+            controls.enabled = false;
+        }
+
+    }
 }

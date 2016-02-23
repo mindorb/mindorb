@@ -346,9 +346,6 @@ THREE.TrackballControls = function (object, domElement) {
     // listeners
 
     function keydown(event) {
-        if (event.keyCode == 67/*'c'*/) {
-            _this.enabled = true;
-        }
         if (_this.enabled === false) return;
 
         //window.removeEventListener('keydown', keydown);
@@ -377,9 +374,6 @@ THREE.TrackballControls = function (object, domElement) {
     function keyup(event) {
         if (_this.enabled === false) return;
 
-        if (event.keyCode == 67/*'c'*/) { 
-            _this.enabled = false;
-        }
         _state = _prevState;
 
         window.addEventListener('keydown', keydown, false);

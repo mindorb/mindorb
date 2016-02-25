@@ -71,7 +71,6 @@ THREE.ObjectSelection = function (parameters) {
         }
         if (intersects.length > 0) {
             if (this.INTERSECTED) {
-                console.log(intersects[0].object.type);
                 this.INTERSECTED.intersectionPoint = intersects[0].point;
                 /*  this is put here to make sure the point of intersection is alwaays correct 
                     since the intersection point was only updated on entry of the hull

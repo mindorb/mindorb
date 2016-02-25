@@ -28,7 +28,7 @@ Drawing.Minorb = function (options) {
     var info_text = {};
     var graph = new Graph({ limit: this.limit });
     var selectedHull = null;
-    var edges=[];
+    var edges = [];
     var hulls;
     var that = this;
     init();
@@ -201,35 +201,53 @@ Drawing.Minorb = function (options) {
     function drawEdge(edge) {
         source = edge.source.data.draw_object.position.clone();
         target = edge.target.data.draw_object.position.clone();
-        direction = target.sub(source);
-        height = direction.length();
-        lineGeometry = new THREE.CylinderGeometry(height/2, height/2, height, 2, 1);
+        var controlPoint1 = source.clone();
+        var controlPoint2 = target.clone();
+        deltax = Math.abs(source.x - target.x);
+        deltay = Math.abs(source.y - target.y);
+        deltaz = Math.abs(source.z - target.z);
+        edgeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
+        if (deltax > deltay && deltax > deltaz) {
+            controlPoint1.x = target.x;
+            controlPoint2.x = source.x;
+        }
+        if (deltaz > deltay && deltaz > deltay) {
+            controlPoint1.z = target.z;
+            controlPoint2.z = source.z;
+        }
+        if (deltay > deltaz && deltay > deltax) {
+            controlPoint1.z = target.z;
+            controlPoint2.z = source.z;
+        }
+        var direction = target.sub(source);
+        var distance = direction.length();
+        var curve = new THREE.CubicBezierCurve3(source, controlPoint1, controlPoint2, target);
+        var edgeGeometry = new THREE.Geometry();
+        edgeGeometry.vertices = curve.getPoints(20);
 
-        //var lineGeometry = new THREE.Geometry();
-
-        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
-        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
-        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
-        //lineGeometry.vertices.push(new THREE.Vector3(source.x, source.y, 2));
-        //lineGeometry.faces.push(new THREE.Face3(0, 1, 2)); // counter-clockwise winding order
-        //lineGeometry.faces.push(new THREE.Face3(0, 2, 3));
-        //lineGeometry.computeFaceNormals();
-        //lineGeometry.computeVertexNormals();
-
-        //that.lineMaterial.side = THREE.DoubleSide;
-        cylinder = new THREE.Mesh(lineGeometry, that.lineMaterial);
-        var focalPoint = new THREE.Vector3(
-            cylinder.position.x + direction.x / 2,
-            cylinder.position.y + direction.y / 2,
-            cylinder.position.z + direction.z / 2
-        );
-        console.log(cylinder.geometry.vertices); 
-        cylinder.lookAt(focalPoint);
-        cylinder.position = focalPoint
-        cylinder.rotateX(Math.PI / 2);
+        var cylinderGeometry = new THREE.CylinderGeometry(2, 10, 20, 5, 20, false);
+        for (var i = 0; i < cylinderGeometry.vertices.length; i++) {
+            var index = cylinderGeometry.vertices[i].y + 10;
+            cylinderGeometry.vertices.y ;
+            cylinderGeometry.vertices[i].add(edgeGeometry.vertices[index]);
+        }
+        cylinder = new THREE.Mesh(cylinderGeometry, edgeMaterial);
+        //cylinder.position = source.position;
+        //cylinder.position.add(direction.divideScalar(2));
+        //var focalPoint = new THREE.Vector3(
+        //        cylinder.position.x + direction.x,
+        //        cylinder.position.y + direction.y,
+        //        cylinder.position.z + direction.z
+        //    );
+        //cylinder.lookAt(focalPoint);
+        //cylinder.rotateX(Math.PI / 2);
+        console.log(cylinderGeometry.vertices);
         cylinder.type = "edge";
-        edge.source.data.hullDrawObject.add(cylinder);
+
         edges.push(cylinder);
+        edge.source.data.hullDrawObject.add(cylinder);
+
+
     }
     function animate() {
         requestAnimationFrame(animate);
@@ -298,7 +316,7 @@ Drawing.Minorb = function (options) {
                 selectedHull.parent.parent.scale.add(new THREE.Vector3(diff, diff, diff));
                 children = selectedHull.parent.parent.children;
                 for (var i = 0; i < children.length; i++) {
-                     children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
+                    children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
                 }
 
             }
@@ -325,7 +343,6 @@ Drawing.Minorb = function (options) {
         if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
             controls.enabled = true;
         }
-        console.log(event.keyCode);
     }
     function keyUpHandler(event) {
         if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {

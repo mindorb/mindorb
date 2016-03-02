@@ -18,28 +18,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script id="LineVert" type="shader">
-        varying vec2 vUv;
-        void main() {
-            vUv = position.yz+vec2(1,1);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-        //gl_Position = projectionMatrix * (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0) + vec4(position.x, position.y, 0.0, 0.0));
-
-        }
-    </script>
-    <script id="LineFrag" type="shader">
-        varying vec2 vUv;
-        uniform vec4 start;
-        uniform vec4 end;
-        void main(void) {
-        int x=int(vUv.x*10.0);
-        int y=int(vUv.y*10.0);
-        if(vUv.x>  0.0)
-            gl_FragColor = vec4(start,0.0, 1.0);
-        else
-            discard;
-        }
-    </script>
     <title>Graph Visualization</title>
     <script src="Graph.js"></script>
     <script src="webgl-frameworks/three.min.js"></script>
@@ -51,9 +29,7 @@
     <script type="text/javascript">
         var drawing;
         function createDrawing() {
-            var vert = document.getElementById("LineVert").textContent;
-            var frag = document.getElementById("LineFrag").textContent;
-            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true, lineVert :vert,lineFrag:frag});
+            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true});
         }
     </script>
 

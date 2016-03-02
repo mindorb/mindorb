@@ -1,3 +1,4 @@
+/// <reference path="webgl-frameworks/Three.js" />
 /**
   @author David Piegza
 
@@ -88,11 +89,22 @@ Graph.prototype.reached_limit = function () {
 
 
 function Node(node_id) {
+    /// <summary>Create an new Node</summary>
+    /// <param name="node_id" type="Number">The node ID</param>
+
     this.id = node_id;
     this.nodesTo = [];
     this.nodesFrom = [];
-    this.position = new THREE.Vector3(0, 0, 0 );
-    this.data = {};
+    this.position = new THREE.Vector3(0, 0, 0);
+    this.data = {
+        /// <field type='THREE.Object3D'>The Three.js drawObject for the node</field>
+        drawObject: new THREE.Object3D(),
+        /// <field type='THREE.Object3D'>The Three.js  draw Object for the Hull</field>
+        hullDrawObject:new THREE.Object3D(),
+        /// <field type='String'>Whether or not to show stats</field>
+        type:""
+    };
+    
 }
 
 Node.prototype.addConnectedTo = function (node) {
@@ -115,6 +127,9 @@ Node.prototype.connectedTo = function (node) {
 
 
 function Edge(source, target) {
+    /// <summary>Create an Edge Between two nodes</summary>
+    /// <param name="source" type="Node">The edge between the two nodes</param>
+    /// <param name="target" type="Node">The edge between the two nodes</param>
     this.source = source;
     this.target = target;
     this.data = {};

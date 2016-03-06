@@ -124,7 +124,7 @@ Drawing.Minorb = function (options) {
                 }
             }
         });
-        document.addEventListener("mousemove", scaleHandler);
+        document.addEventListener("mousemove", mouseMove);
         document.body.appendChild(renderer.domElement);
 
         // Stats.js
@@ -299,24 +299,25 @@ Drawing.Minorb = function (options) {
         document.getElementById("graph-info").innerHTML = str;
     }
 
-    // Generate random number
-    function randomFromTo(from, to) {
-        return Math.floor(Math.random() * (to - from + 1) + from);
-    }
 
-    // Stop layout calculation
-    function scaleHandler(event) {
-
-        if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
+    function mouseMove(event) {
+        if (selectedHull && !controls.enabled && that.scale) { // to make sure the camera controls are not enabled when scaling the hull
             diff = event.movementX * 0.01;
             ScaleHull(selectedHull, diff);
-            
         }
     }
     function keyDownHandler(event) {
-        if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
-            controls.enabled = true;
+
+        key = String.fromCharCode(event.keyCode).toLowerCase()[0];
+        switch (key) {
+            case 'z':
+            case 'd':
+            case 'r':
+                controls.enabled = true;
+            case 's':
+                that.scale = true;
         }
+
     }
     function ScaleHull(hull,scale) {
         /// <param name="hull" type="THREE.Object3D">The Hull to scale</param>
@@ -328,7 +329,7 @@ Drawing.Minorb = function (options) {
         }
         else if ( hull.parent.parent.type == "hull") {
             parentHull = hull.parent.parent;
-            if (hull.scale.length() > parentHull.scale.length() / 4) {
+            if (hull.scale.length() > parentHull.scale.length() / 3) {
                 ScaleHull(parentHull, scale);
             }
             else {
@@ -347,8 +348,14 @@ Drawing.Minorb = function (options) {
         }
     }
     function keyUpHandler(event) {
-        if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
-            controls.enabled = false;
+        key = String.fromCharCode(event.keyCode).toLowerCase()[0];
+        switch (key) {
+            case 'z':
+            case 'd':
+            case 'r':
+                controls.enabled = false;
+            case 's':
+                that.scale = false;
         }
 
     } 

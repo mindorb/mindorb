@@ -9,7 +9,7 @@ THREE.TrackballControls = function (object, domElement) {
 
     this.object = object;
     this.domElement = (domElement !== undefined) ? domElement : document;
-
+    this.start = true;
     // API
 
     this.enabled = true;
@@ -31,7 +31,7 @@ THREE.TrackballControls = function (object, domElement) {
     this.minDistance = 0;
     this.maxDistance = Infinity;
 
-    this.keys = [65 /*A*/, 83 /*S*/, 68 /*D*/];
+    this.keys = [86 /*R*/, 82 /*D*/, 90 /*Z*/];
 
     // internals
 
@@ -346,8 +346,9 @@ THREE.TrackballControls = function (object, domElement) {
     // listeners
 
     function keydown(event) {
-        if (_this.enabled === false) return;
-
+       // if (_this.enabled === false) return;
+        document.addEventListener('mousemove', mousemove, false);
+        document.addEventListener('mouseup', mouseup, false);
         //window.removeEventListener('keydown', keydown);
 
         _prevState = _state;
@@ -369,15 +370,13 @@ THREE.TrackballControls = function (object, domElement) {
             _state = STATE.PAN;
 
         }
-
     }
     function keyup(event) {
-        if (_this.enabled === false) return;
+       // if (_this.enabled === false) return;
 
         _state = _prevState;
 
-        window.addEventListener('keydown', keydown, false);
-
+        mouseup();
     }
 
     function mousedown(event) {
@@ -385,11 +384,9 @@ THREE.TrackballControls = function (object, domElement) {
         if (_this.enabled === false) return;
 
         if (_state === STATE.NONE) {
-
-            _state = event.button;
-
+            _state = 0;
+            
         }
-
         if (_state === STATE.ROTATE && !_this.noRotate) {
 
             _this.getMouseProjectionOnBall(event.pageX, event.pageY, _rotateStart);
@@ -407,17 +404,19 @@ THREE.TrackballControls = function (object, domElement) {
 
         }
 
-        document.addEventListener('mousemove', mousemove, false);
-        document.addEventListener('mouseup', mouseup, false);
         _this.dispatchEvent(startEvent);
 
 
     }
 
     function mousemove(event) {
-
         if (_this.enabled === false) return;
-
+        
+        if (_this.start) {
+            _this.start = false;
+            mousedown(event);
+            return;
+        }
         if (_state === STATE.ROTATE && !_this.noRotate) {
 
             _this.getMouseProjectionOnBall(event.pageX, event.pageY, _rotateEnd);
@@ -437,7 +436,7 @@ THREE.TrackballControls = function (object, domElement) {
     function mouseup(event) {
 
         if (_this.enabled === false) return;
-
+        _this.start = true;
         _state = STATE.NONE;
 
         document.removeEventListener('mousemove', mousemove);
@@ -447,9 +446,6 @@ THREE.TrackballControls = function (object, domElement) {
     }
 
     function mousewheel(event) {
-
-        if (_this.enabled === false) return;
-
         event.preventDefault();
         event.stopPropagation();
 

@@ -204,7 +204,7 @@ Drawing.Minorb = function (options) {
         /// <summary>draw an edge between two Nodes</summary>
         /// <param name="edge" type="Edge">The edge between the two nodes</param>
         
-        source = edge.source.data.drawObject.position.clone();
+        source = new THREE.Vector3(0,0,0);edge.source.data.drawObject.position.clone();
         target = edge.target.data.drawObject.position.clone();
         var controlPoint1 = source.clone();
         var controlPoint2 = target.clone();
@@ -246,10 +246,10 @@ Drawing.Minorb = function (options) {
         cylinder.type = "edge";
 
         edges.push(cylinder);
-        //edge.source.data.hullDrawObject.add(cylinder);
-        line = new THREE.Geometry();
-        line.vertices.push(source,target);
-        edge.source.data.hullDrawObject.add(line,new THREE.LineBasicMaterial({color: 0xff00ff}));
+        edge.source.data.hullDrawObject.add(cylinder);
+        //line = new THREE.Geometry();
+        //line.vertices.push(source,target);
+        //edge.source.data.hullDrawObject.add(line,new THREE.LineBasicMaterial({color: 0xff00ff}));
 
 
     }

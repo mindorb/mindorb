@@ -164,7 +164,7 @@ Drawing.Minorb = function (options) {
         /// <param name="parentObject" type="THREE.Object3D">The parent in the scene hierarchy </param>
         
         parentObject = parentObject || scene;
-        var drawObject = new THREE.Mesh(geometry, that.nodeMaterial);
+        var drawObject = new THREE.Mesh(geometry, that.nodeMaterial.clone());
         if (that.show_labels) {
             if (node.data.title != undefined) {
                 var label_object = new THREE.Label(node.data.title);
@@ -179,7 +179,7 @@ Drawing.Minorb = function (options) {
         drawObject.type = "node";
 
         var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2 * Math.PI, 0, 2 * Math.PI);
-        var hull = new THREE.Mesh(hullGeometry, that.hullMaterial);
+        var hull = new THREE.Mesh(hullGeometry, that.hullMaterial.clone());
         hull.type = "hull";
         hull.position = new THREE.Vector3(0, 0, 0);
         hull.nodeID = node.id;
@@ -198,8 +198,6 @@ Drawing.Minorb = function (options) {
 
     }
 
-
-
     function drawEdge(edge) {
         /// <summary>draw an edge between two Nodes</summary>
         /// <param name="edge" type="Edge">The edge between the two nodes</param>
@@ -212,37 +210,32 @@ Drawing.Minorb = function (options) {
         deltay = Math.abs(source.y - target.y);
         deltaz = Math.abs(source.z - target.z);
         if (deltax > deltay && deltax > deltaz) {
-            controlPoint1.x = target.x;
-            controlPoint2.x = source.x;
+            controlPoint2.x = 0.7 * target.x ;
         }
         if (deltaz > deltay && deltaz > deltay) {
-            controlPoint1.z = target.z;
-            controlPoint2.z = source.z;
+            controlPoint2.z = .7 * target.z ;
         }
         if (deltay > deltaz && deltay > deltax) {
-            controlPoint1.z = target.z;
-            controlPoint2.z = source.z;
+            controlPoint2.y = .7 * target.y ;
         }
+        
         var direction = target.sub(source);
         var distance = direction.length();
-        var curve = new THREE.CubicBezierCurve3(source, controlPoint1, controlPoint2, target);
+        var curve = new THREE.CubicBezierCurve3(source, controlPoint2, controlPoint2, target);
+        console.log(curve.getPoints(20));
         var edgeGeometry = new THREE.Geometry();
         edgeGeometry.vertices = curve.getPoints(20);
 
-        var cylinderGeometry = new THREE.CylinderGeometry(.1, 10, 20, 3, 20, false);
+        var cylinderGeometry = new THREE.CylinderGeometry(.1, 5, 20, 3, 20, false);
         for (var i = 0; i < cylinderGeometry.vertices.length; i++) {
-            var index = cylinderGeometry.vertices[i].y + 10;
-            if (index == 0) {
-                cylinderGeometry.vertices[i].y=source.y;
-            }
-            if (index == 20) {
-                cylinderGeometry.vertices[i] = target;
-            }
-            else {
-                cylinderGeometry.vertices[i].add(edgeGeometry.vertices[index]);
-            }
+            cylinderGeometry.vertices[i].index = cylinderGeometry.vertices[i].y + 10;
+            cylinderGeometry.vertices[i].y = 0;
         }
         cylinder = new THREE.Mesh(cylinderGeometry, that.edgeMaterial);
+
+        for (var i = 0; i < cylinderGeometry.vertices.length; i++) {
+            cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
+        }
         cylinder.type = "edge";
 
         edges.push(cylinder);
@@ -253,6 +246,7 @@ Drawing.Minorb = function (options) {
 
 
     }
+
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
@@ -261,7 +255,6 @@ Drawing.Minorb = function (options) {
             printInfo();
         }
     }
-
 
     function render() {
 
@@ -283,9 +276,6 @@ Drawing.Minorb = function (options) {
         }
     }
 
-    /**
-     *  Prints info from the attribute info_text.
-     */
     function printInfo(text) {
         var str = '';
         for (var index in info_text) {
@@ -297,13 +287,13 @@ Drawing.Minorb = function (options) {
         document.getElementById("graph-info").innerHTML = str;
     }
 
-
     function mouseMove(event) {
         if (selectedHull && !controls.enabled && that.scale) { // to make sure the camera controls are not enabled when scaling the hull
             diff = event.movementX * 0.01;
             ScaleHull(selectedHull, diff);
         }
     }
+
     function keyDownHandler(event) {
 
         key = String.fromCharCode(event.keyCode).toLowerCase()[0];
@@ -312,11 +302,14 @@ Drawing.Minorb = function (options) {
             case 'd':
             case 'r':
                 controls.enabled = true;
+                break;
             case 's':
                 that.scale = true;
+                break;
         }
 
     }
+
     function ScaleHull(hull,scale) {
         /// <param name="hull" type="THREE.Object3D">The Hull to scale</param>
         /// <param name="scale" type="Number">The scale to add</param>  
@@ -345,6 +338,7 @@ Drawing.Minorb = function (options) {
             }
         }
     }
+
     function keyUpHandler(event) {
         key = String.fromCharCode(event.keyCode).toLowerCase()[0];
         switch (key) {

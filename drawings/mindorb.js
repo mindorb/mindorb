@@ -112,9 +112,7 @@ Drawing.Minorb = function (options) {
             mouseDown: function (obj, event) {
                 /// <param name="event" type="MouseEvent">clickEvent</param>
                 if (obj != null && obj.type == "hull") {
-                    if (event.button == 2) { //right mouse button to start scaling
                         selectedHull = obj;
-                    }
                 }
             },
             mouseUp: function (obj, event) {

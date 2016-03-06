@@ -180,7 +180,7 @@ Drawing.Minorb = function (options) {
         drawObject.nodeID = node.id;
         drawObject.type = "node";
 
-        var hullGeometry = new THREE.SphereGeometry(100, 10, 10, 0, 2 * Math.PI, 0, 2 * Math.PI);
+        var hullGeometry = new THREE.SphereGeometry(100, 20, 20, 0, 2 * Math.PI, 0, 2 * Math.PI);
         var hull = new THREE.Mesh(hullGeometry, that.hullMaterial);
         hull.type = "hull";
         hull.position = new THREE.Vector3(0, 0, 0);
@@ -245,11 +245,13 @@ Drawing.Minorb = function (options) {
             }
         }
         cylinder = new THREE.Mesh(cylinderGeometry, that.edgeMaterial);
-        console.log(cylinderGeometry.vertices);
         cylinder.type = "edge";
 
         edges.push(cylinder);
-        edge.source.data.hullDrawObject.add(cylinder);
+        //edge.source.data.hullDrawObject.add(cylinder);
+        line = new THREE.Geometry();
+        line.vertices.push(source,target);
+        edge.source.data.hullDrawObject.add(line,new THREE.LineBasicMaterial({color: 0xff00ff}));
 
 
     }
@@ -266,7 +268,7 @@ Drawing.Minorb = function (options) {
     function render() {
 
         // render selection
-            object_selection.render(selectableContainer, camera);
+        object_selection.render(selectableContainer, camera);
         
 
         // update stats
@@ -304,34 +306,44 @@ Drawing.Minorb = function (options) {
 
     // Stop layout calculation
     function scaleHandler(event) {
-        a = new THREE.Vector3();
-        a.clone();
+
         if (selectedHull && !controls.enabled) { // to make sure the camera controls are not enabled when scaling the hull
             diff = event.movementX * 0.01;
-            selectedHull.scale.add(new THREE.Vector3(diff, diff, diff));
-
-            var absoluteScale = new THREE.Vector3(),
-                parentAbsoulteScale = new THREE.Vector3();
-            selectedHull.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), absoluteScale);
-            selectedHull.parent.parent.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), parentAbsoulteScale);
-            if (selectedHull.parent.parent.type == "hull" &&
-                parentAbsoulteScale.multiplyScalar(.5).length() < absoluteScale.length()) {
-                selectedHull.parent.parent.scale.add(new THREE.Vector3(diff, diff, diff));
-                children = selectedHull.parent.parent.children;
-                for (var i = 0; i < children.length; i++) {
-                    children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
-                }
-
-            }
-            children = selectedHull.children;
-            for (var i = 0; i < children.length; i++) {
-                if (children[i].type == "node") children[i].scale = new THREE.Vector3(1 / selectedHull.scale.x, 1 / 1 / selectedHull.scale.y, 1 / 1 / selectedHull.scale.z);
-            }
+            ScaleHull(selectedHull, diff);
+            
         }
     }
     function keyDownHandler(event) {
         if (event.keyCode == 67  /*'c'*/ || event.keyCode == 83 || event.keyCode == 68) {
             controls.enabled = true;
+        }
+    }
+    function ScaleHull(hull,scale) {
+        /// <param name="hull" type="THREE.Object3D">The Hull to scale</param>
+        /// <param name="scale" type="Number">The scale to add</param>  
+        if (scale < 0) {
+            hull.scale.addScalar(scale);
+            scale = Math.max(1, hull.scale.x);
+            hull.scale = new THREE.Vector3(scale, scale, scale);            
+        }
+        else if ( hull.parent.parent.type == "hull") {
+            parentHull = hull.parent.parent;
+            if (hull.scale.length() > parentHull.scale.length() / 4) {
+                ScaleHull(parentHull, scale);
+            }
+            else {
+                hull.scale.addScalar(scale);
+            }
+        }
+        else {
+            hull.scale.addScalar(scale);
+        }
+        //scale=hull.scale.x;
+        for (var i = 0; i < hull.children.length; i++) {
+            if (hull.children[i].type == "node") {
+                hull.children[i].scale = new THREE.Vector3(1 / hull.scale.x, 1 / hull.scale.x, 1 / hull.scale.x);
+                
+            }
         }
     }
     function keyUpHandler(event) {

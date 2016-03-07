@@ -29,6 +29,7 @@ Drawing.Minorb = function (options) {
     this.edgeMaterial = options.edgeMaterial || new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
+    this.scaleEnabled=false;
     var camera, controls, scene, renderer, interaction, geometry, object_selection;
     var stats;
     var id = 1;
@@ -111,7 +112,7 @@ Drawing.Minorb = function (options) {
             },
             mouseDown: function (obj, event) {
                 /// <param name="event" type="MouseEvent">clickEvent</param>
-                if (obj != null && obj.type == "hull") {
+                if (obj != null && obj.type == "hull" && that.scaleEnabled) {
                         selectedHull = obj;
                 }
             },
@@ -202,26 +203,24 @@ Drawing.Minorb = function (options) {
         /// <summary>draw an edge between two Nodes</summary>
         /// <param name="edge" type="Edge">The edge between the two nodes</param>
         
-        source = new THREE.Vector3(0,0,0);edge.source.data.drawObject.position.clone();
-        target = edge.target.data.drawObject.position.clone();
-        var controlPoint1 = source.clone();
-        var controlPoint2 = target.clone();
-        deltax = Math.abs(source.x - target.x);
-        deltay = Math.abs(source.y - target.y);
-        deltaz = Math.abs(source.z - target.z);
+        var source = new THREE.Vector3(0,0,0);edge.source.data.drawObject.position.clone();
+        var target = edge.target.data.drawObject.position.clone();
+        var controlPoint = target.clone();
+        var deltax = Math.abs(source.x - target.x);
+        var deltay = Math.abs(source.y - target.y);
+        var deltaz = Math.abs(source.z - target.z);
         if (deltax > deltay && deltax > deltaz) {
-            controlPoint2.x = 0.7 * target.x ;
+            controlPoint.x = 0.7 * target.x ;
         }
         if (deltaz > deltay && deltaz > deltay) {
-            controlPoint2.z = .7 * target.z ;
+            controlPoint.z = .7 * target.z ;
         }
         if (deltay > deltaz && deltay > deltax) {
-            controlPoint2.y = .7 * target.y ;
+            controlPoint.y = .7 * target.y ;
         }
         
         var direction = target.sub(source);
-        var distance = direction.length();
-        var curve = new THREE.CubicBezierCurve3(source, controlPoint2, controlPoint2, target);
+        var curve = new THREE.CubicBezierCurve3(source, controlPoint, controlPoint, target);
         console.log(curve.getPoints(20));
         var edgeGeometry = new THREE.Geometry();
         edgeGeometry.vertices = curve.getPoints(20);
@@ -231,7 +230,7 @@ Drawing.Minorb = function (options) {
             cylinderGeometry.vertices[i].index = cylinderGeometry.vertices[i].y + 10;
             cylinderGeometry.vertices[i].y = 0;
         }
-        cylinder = new THREE.Mesh(cylinderGeometry, that.edgeMaterial);
+        var cylinder = new THREE.Mesh(cylinderGeometry, that.edgeMaterial);
 
         for (var i = 0; i < cylinderGeometry.vertices.length; i++) {
             cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
@@ -259,9 +258,10 @@ Drawing.Minorb = function (options) {
     function render() {
 
         // render selection
-        object_selection.render(selectableContainer, camera);
-        
-
+        object_selection.render(scene, camera);
+        if(selectedHull){
+            selectedHull.material.color.setHex(0xff0000);
+        }
         // update stats
         if (that.show_stats) {
             stats.update();
@@ -276,39 +276,43 @@ Drawing.Minorb = function (options) {
         }
     }
 
-    function printInfo(text) {
-        var str = '';
-        for (var index in info_text) {
-            if (str != '' && info_text[index] != '') {
-                str += " - ";
-            }
-            str += info_text[index];
-        }
-        document.getElementById("graph-info").innerHTML = str;
-    }
 
     function mouseMove(event) {
-        if (selectedHull && !controls.enabled && that.scale) { // to make sure the camera controls are not enabled when scaling the hull
-            diff = event.movementX * 0.01;
-            ScaleHull(selectedHull, diff);
+        if (selectedHull && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
+            ScaleHull(selectedHull, event.movementX * 0.01);
         }
     }
 
     function keyDownHandler(event) {
 
-        key = String.fromCharCode(event.keyCode).toLowerCase()[0];
+        var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
         switch (key) {
             case 'z':
             case 'd':
             case 'r':
                 controls.enabled = true;
                 break;
-            case 's':
-                that.scale = true;
+            case String.fromCharCode(16) ://Shift
+                that.scaleEnabled = true;
                 break;
+                
         }
 
     }
+    function keyUpHandler(event) {
+        var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
+        switch (key) {
+            case 'z':
+            case 'd':
+            case 'r':
+                controls.enabled = false;
+            case String.fromCharCode(16):
+                that.scaleEnabled = false;
+                selectedHull.material.color.setHex(0xff00ff);
+                selectedHull = null;
+        }
+
+    } 
 
     function ScaleHull(hull,scale) {
         /// <param name="hull" type="THREE.Object3D">The Hull to scale</param>
@@ -339,16 +343,14 @@ Drawing.Minorb = function (options) {
         }
     }
 
-    function keyUpHandler(event) {
-        key = String.fromCharCode(event.keyCode).toLowerCase()[0];
-        switch (key) {
-            case 'z':
-            case 'd':
-            case 'r':
-                controls.enabled = false;
-            case 's':
-                that.scale = false;
+    function printInfo(text) {
+        var str = '';
+        for (var index in info_text) {
+            if (str != '' && info_text[index] != '') {
+                str += " - ";
+            }
+            str += info_text[index];
         }
-
-    } 
+        document.getElementById("graph-info").innerHTML = str;
+    }
 }

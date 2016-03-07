@@ -2,6 +2,7 @@
 /// <reference path="../Graph.js" />
 /// <reference path="../utils/TrackballControls.js" />
 /// <reference path="../utils/ObjectSelection.js" />
+/// <reference path="../utils/Stats.js" />
 /**
   @author AhmadAboBakr
 
@@ -20,7 +21,7 @@ Drawing.Minorb = function (options) {
     /// <field name='nodeMaterial' type='THREE.Material'>The material used to draw nodes</field>
     /// <field name='hullMaterial' type='THREE.Material'>The material used to draw hulls</field>
     
-    var options = options || {};
+    options = options || {};
     
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
@@ -30,14 +31,13 @@ Drawing.Minorb = function (options) {
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
     this.scaleEnabled=false;
-    var camera, controls, scene, renderer, interaction, geometry, object_selection;
+    var camera, controls, scene, renderer, geometry, object_selection;
     var stats;
     var id = 1;
     var info_text = {};
     var graph = new Graph({ limit: this.limit });
     var selectedHull = null;    
     var edges = [];
-    var hulls;
     var that = this;
     init();
     createGraph();
@@ -52,7 +52,7 @@ Drawing.Minorb = function (options) {
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
         //        camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
         camera.position.z = 5000;
-        var nodes = [];
+
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;
         controls.zoomSpeed = 5.2;
@@ -90,20 +90,20 @@ Drawing.Minorb = function (options) {
                 }
             },
             clicked: function (obj) {
-                if (obj != null && !controls.enabled) {
+                if (obj != null && !controls.enabled &&!that.scaleEnabled) {
                     if (obj.type == "node") {
                         //graph.nodes[obj.nodeID].haveAHull = true;
                         graph.nodes[obj.nodeID].data.drawObject.add(graph.nodes[obj.nodeID].data.hullDrawObject);
                     }
                     else if (obj.type == "hull") {
                         parent = graph.getNode(obj.nodeID);
-                        node = new Node(id++);
+                        var node = new Node(id++);
                         node.position = obj.intersectionPoint.clone();
                         drawNode(node, obj);
                         //node.data.drawObject.scale = new THREE.Vector3(1 / obj.scale.x, 1 / 1 / obj.scale.y, 1 / 1 / obj.scale.z);
 
                         graph.addNode(node);
-                        edge = graph.addEdge(parent, node);
+                        var edge = graph.addEdge(parent, node);
                         drawEdge(edge);
 
                     }
@@ -117,10 +117,7 @@ Drawing.Minorb = function (options) {
                 }
             },
             mouseUp: function (obj, event) {
-                if (event.button == 2) {
-                    selectedHull = null;
-
-                }
+                
             }
         });
         document.addEventListener("mousemove", mouseMove);
@@ -154,7 +151,6 @@ Drawing.Minorb = function (options) {
         node.data.title = "This is node " + node.id;
         graph.addNode(node);
         drawNode(node);
-        selectableContainer = node.data.drawObject;
         //nodes.push(node);
     }
 

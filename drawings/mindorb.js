@@ -9,7 +9,7 @@
   WIP
 
  */
-
+'use strict';
 var Drawing = Drawing || {};
 Drawing.Minorb = function (options) {
     /// <summary>Create the MindOrb.</summary>
@@ -113,6 +113,9 @@ Drawing.Minorb = function (options) {
             mouseDown: function (obj, event) {
                 /// <param name="event" type="MouseEvent">clickEvent</param>
                 if (obj != null && obj.type == "hull" && that.scaleEnabled) {
+                        if(selectedHull){
+                            selectedHull.material.color.setHex(0xff00ff);
+                        }
                         selectedHull = obj;
                 }
             },
@@ -215,7 +218,7 @@ Drawing.Minorb = function (options) {
             controlPoint.y = .7 * target.y ;
         }
         
-        var direction = target.sub(source);
+
         var curve = new THREE.CubicBezierCurve3(source, controlPoint, controlPoint, target);
         console.log(curve.getPoints(20));
         var edgeGeometry = new THREE.Geometry();
@@ -303,9 +306,11 @@ Drawing.Minorb = function (options) {
             case 'r':
                 controls.enabled = false;
             case String.fromCharCode(16):
-                that.scaleEnabled = false;
+                if(selectedHull){
                 selectedHull.material.color.setHex(0xff00ff);
-                selectedHull = null;
+                selectedHull = null;    
+                }
+                that.scaleEnabled = false; 
         }
 
     } 
@@ -319,7 +324,7 @@ Drawing.Minorb = function (options) {
             hull.scale = new THREE.Vector3(scale, scale, scale);            
         }
         else if ( hull.parent.parent.type == "hull") {
-            parentHull = hull.parent.parent;
+            var parentHull = hull.parent.parent;
             if (hull.scale.length() > parentHull.scale.length() / 3) {
                 ScaleHull(parentHull, scale);
             }

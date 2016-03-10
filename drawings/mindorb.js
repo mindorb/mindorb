@@ -259,7 +259,7 @@ Drawing.Minorb = function (options) {
         // render selection
         object_selection.render(scene, camera);
         if(selectedHull){
-            selectedHull.material.color.setHex(0xff0000);
+            selectedHull.material.color.setHex(0x0000ff);
         }
         // update stats
         if (that.show_stats) {

@@ -74,7 +74,6 @@ Drawing.Minorb = function (options) {
         camera.position.z = 5000;
 
         controls = new THREE.TrackballControls(camera);
-        controls.onRotate = rotationHandler;
         controls.rotateSpeed = 0.5;
         controls.zoomSpeed = 5.2;
         controls.panSpeed = 1;
@@ -115,7 +114,6 @@ Drawing.Minorb = function (options) {
             clicked: function (obj) {
                 if (that.mode == Modes.text) {
                     if (obj != null && !controls.enabled) {
-                        console.log(obj.text);
                         obj.text = obj.text || "";
                         that.TextEntry.value = obj.text;
                         if (obj.type == "node" || obj.type == "edge") {
@@ -240,7 +238,6 @@ Drawing.Minorb = function (options) {
         parentObject.matrixWorld.decompose(position, quaternion, scale);
         drawObject.position = parentObject.worldToLocal(drawObject.position);
         drawObject.scale = new THREE.Vector3(1 / scale.x, 1 / scale.y, 1 / scale.z);
-
         parentObject.add(node.data.drawObject);
 
     }
@@ -249,7 +246,8 @@ Drawing.Minorb = function (options) {
         /// <summary>draw an edge between two Nodes</summary>
         /// <param name="edge" type="Edge">The edge between the two nodes</param>
 
-        var source = new THREE.Vector3(0, 0, 0); edge.source.data.drawObject.position.clone();
+        var source = new THREE.Vector3(0, 0, 0);
+        edge.source.data.drawObject.position.clone();
         var target = edge.target.data.drawObject.position.clone();
         var controlPoint = target.clone();
         var deltax = Math.abs(source.x - target.x);
@@ -283,7 +281,7 @@ Drawing.Minorb = function (options) {
             cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
         }
         cylinder.type = "edge";
-
+        
         edges.push(cylinder);
         edge.source.data.hullDrawObject.add(cylinder);
         //line = new THREE.Geometry();
@@ -308,6 +306,23 @@ Drawing.Minorb = function (options) {
         object_selection.render(scene, camera);
         if (that.selectedObject) {
             that.selectedObject.material.color.setHex(0x4400ff);
+        }
+        if (controls.rotationChanged) {
+            controls.rotationChanged = false;
+            for (var i = 0; i < that.text.length; i++) {
+                if (that.text[i].children[0]) {
+                    //var position = new THREE.Vector3();
+                    //var quaternion = new THREE.Quaternion();
+                    //var scale = new THREE.Vector3();
+                    //that.text[i].matrixWorld.decompose(position, quaternion, scale);
+                    //that.text[i].children[0].rotation.x = -camera.rotation.x;
+                    //that.text[i].children[0].rotation.y = -camera.rotation.y;
+                    //that.text[i].children[0].rotation.z = -camera.rotation.z;
+                    //that.text[i].children[0].rotation.w = -camera.rotation.w;
+                    that.text[i].children[0].lookAt(camera.position);
+                    //that.text[i].rotation
+                }
+            }
         }
         // update stats
         if (that.show_stats) {
@@ -435,30 +450,39 @@ Drawing.Minorb = function (options) {
             if (that.TextEntry.value != that.selectedObject.text) {
                 var text = null;
                 that.selectedObject.text = that.TextEntry.value;
-                if (text = that.selectedObject.getObjectByName("text")) {
-                    that.selectedObject.remove(text);
-                    var index = that.text.indexOf(text);
-                    if (index > -1) {
-                        that.text.splice(index, 1);
-                    }
+                if (!that.selectedObject.textDrawObject) {
+                    that.selectedObject.textDrawObject = new THREE.Object3D();
+                    that.text.push(that.selectedObject.textDrawObject);
+
+                    that.selectedObject.add(that.selectedObject.textDrawObject);
                 }
-                text = new THREE.Mesh();
-                that.text.push(text);
-                text.type = "text";
-                text.name = "text";
-                text.material = that.nodeMaterial;
-                var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
-                    font: 'helvetiker',
-                    weight: 'normal',
-                    curveSegments: 1
-                });
-                text.geometry = textGeom;
-                that.selectedObject.add(text);
+                if (that.TextEntry.value.length > 0) {
+                    while (that.selectedObject.textDrawObject.children.length > 0) {
+                        that.selectedObject.textDrawObject.remove(that.selectedObject.textDrawObject.children[0]);
+                    }
+                    text = new THREE.Mesh();
+                    that.text.push(text);
+                    text.type = "text";
+                    text.name = "text";
+                    text.material = that.nodeMaterial;
+                    var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
+                        font: 'helvetiker',
+                        weight: 'normal',
+                        curveSegments: 1,
+                        size:80
+                    });
+                    textGeom.computeBoundingBox();
+                    var width = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
+                    var height = textGeom.boundingBox.max.y - textGeom.boundingBox.min.y;
+                    THREE.GeometryUtils.center(textGeom);
+                    text.geometry = textGeom;
+                    that.text.push(text);
+                    text.lookAt(camera.position);
+                    that.selectedObject.textDrawObject.add(text);
+                }
+                
             }
         }
     }
-    function rotationHandler() {
-        console.log("rotated")
 
-    }
 }

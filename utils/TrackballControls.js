@@ -13,7 +13,7 @@ THREE.TrackballControls = function (object, domElement) {
     // API
 
     this.enabled = true;
-
+    this.rotationChanged = false;
     this.screen = { left: 0, top: 0, width: 0, height: 0 };
 
     this.rotateSpeed = 1.0;
@@ -167,10 +167,10 @@ THREE.TrackballControls = function (object, domElement) {
 
 
         return function () {
-
             var angle = Math.acos(_rotateStart.dot(_rotateEnd) / _rotateStart.length() / _rotateEnd.length());
 
             if (angle) {
+                _this.rotationChanged = true;
 
                 axis.crossVectors(_rotateStart, _rotateEnd).normalize();
 

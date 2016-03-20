@@ -26,9 +26,12 @@
     <script src="utils/Label.js"></script>
     <script src="utils/ObjectSelection.js"></script>
     <script src="drawings/mindorb.js"></script>
+    <script src="fonts/helvetiker_bold.typeface.js"></script>
+    <script src="fonts/helvetiker_regular.typeface.js"></script>
     <script type="text/javascript">
         var drawing;
         function createDrawing() {
+
             drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true});
         }
     </script>
@@ -58,18 +61,27 @@
             right: 0;
             z-index: 10;
         }
+        #TextEntry{
+            display:block;
+            position: absolute;
+            top :   -50000px ;
+            left : -500000px;
+        }
+       
     </style>
 </head>
 <body onload="createDrawing()">
     <div id="options">
         <form>
             <p>
-                <input type="checkbox" id="show_labels" onclick="drawing.show_labels = this.checked;">
-                <label for="show_labels">Show labels</label>
+                <select onchange = "drawing.changeMode(this)">
+                    <option value = "graph" onchange = "drawing.changeMode('ss')">Graphing mode</option>
+                    <option value = "text"  onselect = "">Text Mode</option>
+                </select>
             </p>
         </form>
     </div>
-
+    <input type="text" id="TextEntry" />
     <div style="position: absolute; bottom: 0;">
 
         Rotate: Press Key R + mouse Move <br />
@@ -77,5 +89,6 @@
         Drag: Press Key D + mouse Move<br />
         Scale a hull : press Key Shift + mouse click + mouse move
     </div>
+
 </body>
 </html>

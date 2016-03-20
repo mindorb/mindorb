@@ -9,20 +9,23 @@
   WIP
 
  */
-'use strict';
 var Drawing = Drawing || {};
 Drawing.Minorb = function (options) {
     /// <summary>Create the MindOrb.</summary>
     /// <param name="options" type="Object">An object contains  the initialization data for the graph</param>
     /// <field name='showStats' type='Boolean'>Whether or not to show stats</field>
-    /// <field name='selectedHull' type='THREE.Object3D'>The currently selected hull</field>
+    /// <field name='selectedObject' type='THREE.Object3D'>The currently selected hull</field>
     /// <field name='limit' type='Number'>The maximum number of allowed nodes</field>
     /// <field name='edgeMaterial' type='THREE.Material'>The material used to draw edges</field>
     /// <field name='nodeMaterial' type='THREE.Material'>The material used to draw nodes</field>
     /// <field name='hullMaterial' type='THREE.Material'>The material used to draw hulls</field>
-    
+    /// <field name='text' type='Array' elementType="THREE.Object3D">Objects that faces the camera</field>
+    Modes = {
+        graph: 0,
+        text: 1
+    }
     options = options || {};
-    
+
     this.show_stats = options.showStats || false;
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
@@ -30,13 +33,30 @@ Drawing.Minorb = function (options) {
     this.edgeMaterial = options.edgeMaterial || new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
-    this.scaleEnabled=false;
+    this.textMaterial = options.textMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: true })
+    this.scaleEnabled = false;
+    this.mode = Modes.graph;
+    this.currentColor = null;
+    this.keys = [];
+    this.selectedObject = null;
+
+    this.TextEntry = document.createElement("input");
+    this.TextEntry.type = "Text";
+    this.TextEntry.id = "TextEntry";
+    this.TextEntry.onkeypress
+    this.TextEntry.addEventListener("keypress", handleText);
+    this.TextEntry.addEventListener("paste", handleText);
+    this.TextEntry.addEventListener("change", handleText);
+
+
+    this.text = [];
+
+    document.body.appendChild(this.TextEntry);
     var camera, controls, scene, renderer, geometry, object_selection;
     var stats;
     var id = 1;
     var info_text = {};
     var graph = new Graph({ limit: this.limit });
-    var selectedHull = null;    
     var edges = [];
     var that = this;
     init();
@@ -50,10 +70,11 @@ Drawing.Minorb = function (options) {
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
-        //        camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
+        // camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
         camera.position.z = 5000;
 
         controls = new THREE.TrackballControls(camera);
+        controls.onRotate = rotationHandler;
         controls.rotateSpeed = 0.5;
         controls.zoomSpeed = 5.2;
         controls.panSpeed = 1;
@@ -75,7 +96,8 @@ Drawing.Minorb = function (options) {
         geometry = new THREE.CubeGeometry(50, 50, 50);
         window.addEventListener('keydown', keyDownHandler, false);
         window.addEventListener('keyup', keyUpHandler, false);
-
+        document.addEventListener("mousemove", mouseMove);
+        document.addEventListener("keypress", keyPressHandler);
         // Create node selection, if set
         object_selection = new THREE.ObjectSelection({
             domElement: renderer.domElement,
@@ -85,27 +107,53 @@ Drawing.Minorb = function (options) {
                     if (obj.type == "node") {
                         info_text.select = "Object " + obj.id;
                     }
-                } else {
+                }
+                else {
                     delete info_text.select;
                 }
             },
             clicked: function (obj) {
-                if (obj != null && !controls.enabled &&!that.scaleEnabled) {
-                    if (obj.type == "node") {
-                        //graph.nodes[obj.nodeID].haveAHull = true;
-                        graph.nodes[obj.nodeID].data.drawObject.add(graph.nodes[obj.nodeID].data.hullDrawObject);
+                if (that.mode == Modes.text) {
+                    if (obj != null && !controls.enabled) {
+                        console.log(obj.text);
+                        obj.text = obj.text || "";
+                        that.TextEntry.value = obj.text;
+                        if (obj.type == "node" || obj.type == "edge") {
+                            that.TextEntry.focus();
+                            if (obj.type == "node") {
+                                if (that.selectedObject) {
+                                    that.selectedObject.material.color.setHex(that.currentColor)
+                                }
+                                that.currentColor = object_selection.INTERSECTED.currentHex;
+                                that.selectedObject = obj;
+                            }
+                            else if (obj.type == "edge") {
+                                if (that.selectedObject) {
+                                    that.selectedObject.material.color.setHex(that.currentColor)
+                                }
+                                that.currentColor = object_selection.INTERSECTED.currentHex;
+                                that.selectedObject = obj;
+                            }
+                        }
                     }
-                    else if (obj.type == "hull") {
-                        parent = graph.getNode(obj.nodeID);
-                        var node = new Node(id++);
-                        node.position = obj.intersectionPoint.clone();
-                        drawNode(node, obj);
-                        //node.data.drawObject.scale = new THREE.Vector3(1 / obj.scale.x, 1 / 1 / obj.scale.y, 1 / 1 / obj.scale.z);
 
-                        graph.addNode(node);
-                        var edge = graph.addEdge(parent, node);
-                        drawEdge(edge);
+                }
+                else if (that.mode == Modes.graph) {
+                    if (obj != null && !controls.enabled && !that.scaleEnabled) {
+                        if (obj.type == "node") {
+                            graph.nodes[obj.nodeID].data.drawObject.add(graph.nodes[obj.nodeID].data.hullDrawObject);
+                        }
+                        else if (obj.type == "hull") {
+                            parent = graph.getNode(obj.nodeID);
+                            var node = new Node(id++);
+                            node.position = obj.intersectionPoint.clone();
+                            drawNode(node, obj);
 
+                            graph.addNode(node);
+                            var edge = graph.addEdge(parent, node);
+                            drawEdge(edge);
+
+                        }
                     }
                 }
 
@@ -113,17 +161,16 @@ Drawing.Minorb = function (options) {
             mouseDown: function (obj, event) {
                 /// <param name="event" type="MouseEvent">clickEvent</param>
                 if (obj != null && obj.type == "hull" && that.scaleEnabled) {
-                        if(selectedHull){
-                            selectedHull.material.color.setHex(0xff00ff);
-                        }
-                        selectedHull = obj;
+                    if (that.selectedObject) {
+                        that.selectedObject.material.color.setHex(0xff00ff);
+                    }
+                    that.selectedObject = obj;
                 }
             },
             mouseUp: function (obj, event) {
-                
+
             }
         });
-        document.addEventListener("mousemove", mouseMove);
         document.body.appendChild(renderer.domElement);
 
         // Stats.js
@@ -142,10 +189,11 @@ Drawing.Minorb = function (options) {
             info.setAttributeNode(id_attr);
             document.body.appendChild(info);
         }
+        for (var i = 0; i < length; i++) {
+            that.keys[i] = false;
+        }
     }
 
-
-    
     function createGraph() {
         /// <summary>Create a graph with an initial node at the center of the world.</summary>
 
@@ -157,12 +205,11 @@ Drawing.Minorb = function (options) {
         //nodes.push(node);
     }
 
-
     function drawNode(node, parentObject) {
         /// <summary>Create a node object and add it to the scene.</summary>
         /// <param name="node" type="Node">The node to Insert to the scen.</param>
         /// <param name="parentObject" type="THREE.Object3D">The parent in the scene hierarchy </param>
-        
+
         parentObject = parentObject || scene;
         var drawObject = new THREE.Mesh(geometry, that.nodeMaterial.clone());
         if (that.show_labels) {
@@ -174,7 +221,7 @@ Drawing.Minorb = function (options) {
             node.data.label_object = label_object;
             scene.add(node.data.label_object);
         }
-        
+
         drawObject.nodeID = node.id;
         drawObject.type = "node";
 
@@ -186,41 +233,41 @@ Drawing.Minorb = function (options) {
         node.data.hullDrawObject = hull;
         node.data.drawObject = drawObject;
         drawObject.position = new THREE.Vector3(node.position.x, node.position.y, node.position.z);
-        //        drawObject.position.sub(parentObject.position);
+
         var position = new THREE.Vector3();
         var quaternion = new THREE.Quaternion();
         var scale = new THREE.Vector3();
         parentObject.matrixWorld.decompose(position, quaternion, scale);
         drawObject.position = parentObject.worldToLocal(drawObject.position);
         drawObject.scale = new THREE.Vector3(1 / scale.x, 1 / scale.y, 1 / scale.z);
+
         parentObject.add(node.data.drawObject);
-        //
 
     }
 
     function drawEdge(edge) {
         /// <summary>draw an edge between two Nodes</summary>
         /// <param name="edge" type="Edge">The edge between the two nodes</param>
-        
-        var source = new THREE.Vector3(0,0,0);edge.source.data.drawObject.position.clone();
+
+        var source = new THREE.Vector3(0, 0, 0); edge.source.data.drawObject.position.clone();
         var target = edge.target.data.drawObject.position.clone();
         var controlPoint = target.clone();
         var deltax = Math.abs(source.x - target.x);
         var deltay = Math.abs(source.y - target.y);
         var deltaz = Math.abs(source.z - target.z);
         if (deltax > deltay && deltax > deltaz) {
-            controlPoint.x = 0.7 * target.x ;
+            controlPoint.x = 0.7 * target.x;
         }
         if (deltaz > deltay && deltaz > deltay) {
-            controlPoint.z = .7 * target.z ;
+            controlPoint.z = .7 * target.z;
         }
         if (deltay > deltaz && deltay > deltax) {
-            controlPoint.y = .7 * target.y ;
+            controlPoint.y = .7 * target.y;
         }
-        
+
 
         var curve = new THREE.CubicBezierCurve3(source, controlPoint, controlPoint, target);
-        console.log(curve.getPoints(20));
+        //console.log(curve.getPoints(20));
         var edgeGeometry = new THREE.Geometry();
         edgeGeometry.vertices = curve.getPoints(20);
 
@@ -229,7 +276,8 @@ Drawing.Minorb = function (options) {
             cylinderGeometry.vertices[i].index = cylinderGeometry.vertices[i].y + 10;
             cylinderGeometry.vertices[i].y = 0;
         }
-        var cylinder = new THREE.Mesh(cylinderGeometry, that.edgeMaterial);
+        var linematerial = that.edgeMaterial.clone();
+        var cylinder = new THREE.Mesh(cylinderGeometry, linematerial);
 
         for (var i = 0; i < cylinderGeometry.vertices.length; i++) {
             cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
@@ -258,8 +306,8 @@ Drawing.Minorb = function (options) {
 
         // render selection
         object_selection.render(scene, camera);
-        if(selectedHull){
-            selectedHull.material.color.setHex(0x0000ff);
+        if (that.selectedObject) {
+            that.selectedObject.material.color.setHex(0x4400ff);
         }
         // update stats
         if (that.show_stats) {
@@ -275,55 +323,63 @@ Drawing.Minorb = function (options) {
         }
     }
 
-
     function mouseMove(event) {
-        if (selectedHull && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
-            ScaleHull(selectedHull, event.movementX * 0.01);
+        if (that.selectedObject && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
+            ScaleHull(that.selectedObject, event.movementX * 0.01);
         }
     }
 
     function keyDownHandler(event) {
+        that.keys[event.keyCode] = true;
+        if (that.mode == Modes.graph) {
+            var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
 
-        var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
-        switch (key) {
-            case 'z':
-            case 'd':
-            case 'r':
-                controls.enabled = true;
-                break;
-            case String.fromCharCode(16) ://Shift
-                that.scaleEnabled = true;
-                break;
-                
+            switch (key) {
+                case 'z':
+                case 'd':
+                case 'r':
+                    controls.enabled = true;
+                    break;
+                case String.fromCharCode(16)://Shift
+                    that.scaleEnabled = true;
+                    break;
+            }
+        }
+    }
+
+    function keyUpHandler(event) {
+        that.keys[event.keyCode] = false;
+
+        if (that.mode == Modes.graph) {
+            var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
+
+            switch (key) {
+                case 'z':
+                case 'd':
+                case 'r':
+                    controls.enabled = false;
+                case String.fromCharCode(16):
+                    if (that.selectedObject) {
+                        that.selectedObject.material.color.setHex(0xff00ff);
+                        that.selectedObject = null;
+                    }
+                    that.scaleEnabled = false;
+            }
         }
 
     }
-    function keyUpHandler(event) {
-        var key = String.fromCharCode(event.keyCode).toLowerCase()[0];
-        switch (key) {
-            case 'z':
-            case 'd':
-            case 'r':
-                controls.enabled = false;
-            case String.fromCharCode(16):
-                if(selectedHull){
-                selectedHull.material.color.setHex(0xff00ff);
-                selectedHull = null;    
-                }
-                that.scaleEnabled = false; 
-        }
 
-    } 
-
-    function ScaleHull(hull,scale) {
+    function keyPressHandler(event) {
+    }
+    function ScaleHull(hull, scale) {
         /// <param name="hull" type="THREE.Object3D">The Hull to scale</param>
         /// <param name="scale" type="Number">The scale to add</param>  
         if (scale < 0) {
             hull.scale.addScalar(scale);
             scale = Math.max(1, hull.scale.x);
-            hull.scale = new THREE.Vector3(scale, scale, scale);            
+            hull.scale = new THREE.Vector3(scale, scale, scale);
         }
-        else if ( hull.parent.parent.type == "hull") {
+        else if (hull.parent.parent.type == "hull") {
             var parentHull = hull.parent.parent;
             if (hull.scale.length() > parentHull.scale.length() / 3) {
                 ScaleHull(parentHull, scale);
@@ -339,7 +395,7 @@ Drawing.Minorb = function (options) {
         for (var i = 0; i < hull.children.length; i++) {
             if (hull.children[i].type == "node") {
                 hull.children[i].scale = new THREE.Vector3(1 / hull.scale.x, 1 / hull.scale.x, 1 / hull.scale.x);
-                
+
             }
         }
     }
@@ -353,5 +409,56 @@ Drawing.Minorb = function (options) {
             str += info_text[index];
         }
         document.getElementById("graph-info").innerHTML = str;
+    }
+
+    this.changeMode = function (mode) {
+        mode = mode.selectedIndex;
+        that.selectedObject = null;
+        switch (mode) {
+            case Modes.graph:
+                that.mode = Modes.graph;
+                object_selection.mask = ['node', 'hull'];
+                console.log("g");
+                break;
+            case Modes.text:
+                that.mode = Modes.text;
+                object_selection.mask = ['node', 'edge'];
+                console.log("t");
+                break;
+            default:
+
+        }
+
+    }
+    function handleText() {
+        if (that.selectedObject) {
+            if (that.TextEntry.value != that.selectedObject.text) {
+                var text = null;
+                that.selectedObject.text = that.TextEntry.value;
+                if (text = that.selectedObject.getObjectByName("text")) {
+                    that.selectedObject.remove(text);
+                    var index = that.text.indexOf(text);
+                    if (index > -1) {
+                        that.text.splice(index, 1);
+                    }
+                }
+                text = new THREE.Mesh();
+                that.text.push(text);
+                text.type = "text";
+                text.name = "text";
+                text.material = that.nodeMaterial;
+                var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
+                    font: 'helvetiker',
+                    weight: 'normal',
+                    curveSegments: 1
+                });
+                text.geometry = textGeom;
+                that.selectedObject.add(text);
+            }
+        }
+    }
+    function rotationHandler() {
+        console.log("rotated")
+
     }
 }

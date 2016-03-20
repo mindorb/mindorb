@@ -19,6 +19,7 @@ THREE.ObjectSelection = function (parameters) {
     this.domElement = parameters.domElement || document;
     this.projector = new THREE.Projector();
     this.INTERSECTED;
+    this.mask = ['node','hull'];
     var _this = this;
     var base = null;
     var callbackSelected = parameters.selected;
@@ -66,8 +67,8 @@ THREE.ObjectSelection = function (parameters) {
 
         var intersects = raycaster.intersectObject(scene, true);
         var i = 1;
-        while (intersects.length > 0 && intersects[0].object && intersects[0].object.type == "edge") {
-            intersects.splice(0,1);
+        while (intersects.length > 0 && intersects[0].object && this.mask.indexOf(intersects[0].object.type)<0) {            
+            intersects.splice(0, 1);
         }
         if (intersects.length > 0) {
             if (this.INTERSECTED) {
@@ -76,14 +77,14 @@ THREE.ObjectSelection = function (parameters) {
                     since the intersection point was only updated on entry of the hull
                 */
             }
-            if (this.INTERSECTED != intersects[0].object && intersects[0].object.type!="edge") {
+            if (this.INTERSECTED != intersects[0].object && this.mask.indexOf(intersects[0].object.type) >= 0) {
                 if (this.INTERSECTED) {
                     this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
                 }
 
                 this.INTERSECTED = intersects[0].object;
                 this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
-                this.INTERSECTED.material.color.setHex(0xff0000);
+                this.INTERSECTED.material.color.setHex(0xff00ff);
                 if (typeof callbackSelected === 'function') {
                     callbackSelected(this.INTERSECTED);
                 }

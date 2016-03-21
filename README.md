@@ -2,7 +2,7 @@
 
 Start creating Mind Maps with just a few branches:
 
-https://www.upwork.com/api/v3/wp-files/direct/room_d970d3756db8ad5e03e1ebe72f6e01c1/a671ee59-dc04-4696-9649-7494f36456f8/Untitled.png
+<img src="http://www.portostar.com/mindorb_few_branches.png" />
 
 Add even more branches if you like:
 
@@ -14,6 +14,7 @@ A 3D Mind Mapping tool which makes it possible to represent Mind Maps in 3D. We 
   - Creation of nearly an unlimited amount of nodes
   - Zooming into and out of nodes
   - Dragging of nodes
+  - text on branches
 
 # the idea
 

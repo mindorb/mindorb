@@ -35,6 +35,7 @@ Drawing.Minorb = function (options) {
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
     this.textMaterial = options.textMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: true })
     this.scaleEnabled = false;
+	this.zoomEnabled = false;
     this.mode = Modes.graph;
     this.currentColor = null;
     this.keys = [];
@@ -163,7 +164,7 @@ Drawing.Minorb = function (options) {
                 /// <param name="event" type="MouseEvent">clickEvent</param>
                 if (obj != null && obj.type == "hull" && that.scaleEnabled) {
                     if (that.selectedObject) {
-                        that.selectedObject.material.color.setHex(0xff00ff);
+                        that.selectedObject.material.color.setHex(0x8800ff);
                     }
                     that.selectedObject = obj;
                 }
@@ -333,6 +334,13 @@ Drawing.Minorb = function (options) {
     }
 
     function mouseMove(event) {
+		
+		if (that.zoomEnabled)
+		{
+		
+		camera.translateZ( -event.movementX*100);
+		console.log("T");
+		} else
         if (that.selectedObject && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
             ScaleHull(that.selectedObject, event.movementX * 0.01);
         }
@@ -345,6 +353,8 @@ Drawing.Minorb = function (options) {
 
             switch (key) {
                 case 'z':
+					  that.zoomEnabled = true;
+					 break;
                 case 'd':
                 case 'r':
                     controls.enabled = true;
@@ -364,6 +374,7 @@ Drawing.Minorb = function (options) {
 
             switch (key) {
                 case 'z':
+					that.zoomEnabled = false;
                 case 'd':
                 case 'r':
                     controls.enabled = false;

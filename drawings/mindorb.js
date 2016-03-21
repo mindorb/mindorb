@@ -48,6 +48,8 @@ Drawing.Minorb = function (options) {
     this.TextEntry.addEventListener("paste", handleText);
     this.TextEntry.addEventListener("change", handleText);
 
+    this.dummyObject = new THREE.Object3D();
+
 
     this.text = [];
 
@@ -92,6 +94,7 @@ Drawing.Minorb = function (options) {
 
 
         scene = new THREE.Scene();
+
         geometry = new THREE.CubeGeometry(50, 50, 50);
         window.addEventListener('keydown', keyDownHandler, false);
         window.addEventListener('keyup', keyUpHandler, false);
@@ -281,7 +284,7 @@ Drawing.Minorb = function (options) {
             cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
         }
         cylinder.type = "edge";
-        
+
         edges.push(cylinder);
         edge.source.data.hullDrawObject.add(cylinder);
         //line = new THREE.Geometry();
@@ -311,16 +314,7 @@ Drawing.Minorb = function (options) {
             controls.rotationChanged = false;
             for (var i = 0; i < that.text.length; i++) {
                 if (that.text[i].children[0]) {
-                    //var position = new THREE.Vector3();
-                    //var quaternion = new THREE.Quaternion();
-                    //var scale = new THREE.Vector3();
-                    //that.text[i].matrixWorld.decompose(position, quaternion, scale);
-                    //that.text[i].children[0].rotation.x = -camera.rotation.x;
-                    //that.text[i].children[0].rotation.y = -camera.rotation.y;
-                    //that.text[i].children[0].rotation.z = -camera.rotation.z;
-                    //that.text[i].children[0].rotation.w = -camera.rotation.w;
-                    that.text[i].children[0].lookAt(camera.position);
-                    //that.text[i].rotation
+                    that.text[i].children[0].rotation = (camera.rotation);
                 }
             }
         }
@@ -446,15 +440,16 @@ Drawing.Minorb = function (options) {
 
     }
     function handleText() {
-        if (that.selectedObject) {
+        if (that.selectedObject && that.selectedObject.type=="node") {
             if (that.TextEntry.value != that.selectedObject.text) {
                 var text = null;
                 that.selectedObject.text = that.TextEntry.value;
                 if (!that.selectedObject.textDrawObject) {
+
                     that.selectedObject.textDrawObject = new THREE.Object3D();
                     that.text.push(that.selectedObject.textDrawObject);
-
                     that.selectedObject.add(that.selectedObject.textDrawObject);
+
                 }
                 if (that.TextEntry.value.length > 0) {
                     while (that.selectedObject.textDrawObject.children.length > 0) {
@@ -468,19 +463,17 @@ Drawing.Minorb = function (options) {
                     var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
                         font: 'helvetiker',
                         weight: 'normal',
-                        curveSegments: 1,
-                        size:80
+                        curveSegments: 2,
+                        size: 100, height: 1
                     });
                     textGeom.computeBoundingBox();
-                    var width = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
-                    var height = textGeom.boundingBox.max.y - textGeom.boundingBox.min.y;
                     THREE.GeometryUtils.center(textGeom);
+                    //text.position.z -= 100;
                     text.geometry = textGeom;
                     that.text.push(text);
                     text.lookAt(camera.position);
                     that.selectedObject.textDrawObject.add(text);
                 }
-                
             }
         }
     }

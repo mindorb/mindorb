@@ -94,7 +94,6 @@ Drawing.Minorb = function (options) {
         controls.addEventListener('change', render);
         //controls.enabled = false;
 
-
         scene = new THREE.Scene();
 
         geometry = new THREE.CubeGeometry(50, 50, 50);
@@ -338,9 +337,7 @@ Drawing.Minorb = function (options) {
 		
 		if (that.zoomEnabled)
 		{
-		
 		camera.translateZ( -event.movementX*100);
-		console.log("T");
 		} else
         if (that.selectedObject && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
             ScaleHull(that.selectedObject, event.movementX * 0.01);

@@ -13,7 +13,7 @@
     clicked: callback function, passes the current clicked object
  */
 
-var mouse = { x: 0, y: 0, moved : false , shift : false};
+var mouse = { x: 0, y: 0, moved : false, shift : false};
 THREE.ObjectSelection = function (parameters) {
     var parameters = parameters || {};
     this.point = null;
@@ -26,7 +26,7 @@ THREE.ObjectSelection = function (parameters) {
     var callbackSelected = parameters.selected;
     var callbackClicked = parameters.clicked;
     var callbackMouseDown = parameters.mouseDown;
-    var callbackMouseUp = parameters.mouseUp;    
+    var callbackMouseUp = parameters.mouseUp;
 
     this.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
     function onDocumentMouseMove(event) {
@@ -48,7 +48,8 @@ THREE.ObjectSelection = function (parameters) {
 
     function onMouseDown(event) {
         mouse.moved=false;
-        if (mouse.shift==false) controls.enabled=true;
+		
+        if (mouse.shift==false) { controls.enabled=true; }
         if (_this.INTERSECTED) {
             if (typeof callbackMouseDown === 'function') {
                 callbackMouseDown(_this.INTERSECTED, event);

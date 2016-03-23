@@ -68,6 +68,9 @@ THREE.TrackballControls = function (object, domElement) {
     var startEvent = { type: 'start' };
     var endEvent = { type: 'end' };
 
+	document.addEventListener('mousemove', mousemove, false);
+    document.addEventListener('mouseup', mouseup, false);
+
 
     // methods
 
@@ -347,8 +350,7 @@ THREE.TrackballControls = function (object, domElement) {
 
     function keydown(event) {
        // if (_this.enabled === false) return;
-        document.addEventListener('mousemove', mousemove, false);
-        document.addEventListener('mouseup', mouseup, false);
+
         //window.removeEventListener('keydown', keydown);
 
         _prevState = _state;
@@ -410,13 +412,15 @@ THREE.TrackballControls = function (object, domElement) {
     }
 
     function mousemove(event) {
+		     
         if (_this.enabled === false) return;
-        
+
         if (_this.start) {
             _this.start = false;
             mousedown(event);
             return;
         }
+		
         if (_state === STATE.ROTATE && !_this.noRotate) {
 
             _this.getMouseProjectionOnBall(event.pageX, event.pageY, _rotateEnd);

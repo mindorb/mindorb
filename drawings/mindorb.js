@@ -10,7 +10,7 @@
 
  */
 var Drawing = Drawing || {};
-var control;
+var controls;
 Drawing.Minorb = function (options) {
     /// <summary>Create the MindOrb.</summary>
     /// <param name="options" type="Object">An object contains  the initialization data for the graph</param>

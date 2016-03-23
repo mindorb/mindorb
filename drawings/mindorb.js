@@ -399,12 +399,12 @@ Drawing.Minorb = function (options) {
         /// <param name="scale" type="Number">The scale to add</param>  
         if (scale < 0) {
             hull.scale.addScalar(scale);
-            scale = Math.max(1, hull.scale.x);
+            scale = Math.max(1.5, hull.scale.x);
             hull.scale = new THREE.Vector3(scale, scale, scale);
         }
         else if (hull.parent.parent.type == "hull") {
             var parentHull = hull.parent.parent;
-            if (hull.scale.length() > parentHull.scale.length() / 3) {
+            if (hull.scale.length() > parentHull.scale.length() / 2 ) {
                 ScaleHull(parentHull, scale);
             }
             else {

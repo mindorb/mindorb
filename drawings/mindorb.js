@@ -10,6 +10,7 @@
 
  */
 var Drawing = Drawing || {};
+var control;
 Drawing.Minorb = function (options) {
     /// <summary>Create the MindOrb.</summary>
     /// <param name="options" type="Object">An object contains  the initialization data for the graph</param>
@@ -55,7 +56,7 @@ Drawing.Minorb = function (options) {
     this.text = [];
 
     document.body.appendChild(this.TextEntry);
-    var camera, controls, scene, renderer, geometry, object_selection;
+    var camera, scene, renderer, geometry, object_selection;
     var stats;
     var id = 1;
     var info_text = {};
@@ -141,7 +142,7 @@ Drawing.Minorb = function (options) {
 
                 }
                 else if (that.mode == Modes.graph) {
-                    if (obj != null && !controls.enabled && !that.scaleEnabled) {
+                    if (obj != null && !that.scaleEnabled && !mouse.moved) { // && !controls.enabled
                         if (obj.type == "node") {
                             graph.nodes[obj.nodeID].data.drawObject.add(graph.nodes[obj.nodeID].data.hullDrawObject);
                         }
@@ -361,6 +362,7 @@ Drawing.Minorb = function (options) {
                     break;
                 case String.fromCharCode(16)://Shift
                     that.scaleEnabled = true;
+                    mouse.shift=true;
                     break;
             }
         }
@@ -384,6 +386,7 @@ Drawing.Minorb = function (options) {
                         that.selectedObject = null;
                     }
                     that.scaleEnabled = false;
+                    mouse.shift=false;
             }
         }
 

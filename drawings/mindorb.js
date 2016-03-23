@@ -75,7 +75,7 @@ Drawing.Minorb = function (options) {
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000000);
         // camera = new THREE.OrthographicCamera(0, window.innerWidth ,0, window.innerHeight, 1, 1000000);
-        camera.position.z = 5000;
+        camera.position.z = 1000;
 
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;

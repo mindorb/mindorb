@@ -443,8 +443,8 @@ THREE.TrackballControls = function (object, domElement) {
         _this.start = true;
         _state = STATE.NONE;
 
-        document.removeEventListener('mousemove', mousemove);
-        document.removeEventListener('mouseup', mouseup);
+        //document.removeEventListener('mousemove', mousemove);
+        //document.removeEventListener('mouseup', mouseup);
         _this.dispatchEvent(endEvent);
 
     }

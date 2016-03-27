@@ -46,10 +46,10 @@ Drawing.Minorb = function (options) {
     this.TextEntry.type = "Text";
     this.TextEntry.id = "TextEntry";
     this.TextEntry.onkeypress
-    this.TextEntry.addEventListener("keypress", handleText);
-    this.TextEntry.addEventListener("paste", handleText);
-    this.TextEntry.addEventListener("change", handleText);
-
+    //this.TextEntry.addEventListener("keypress", handleText);
+    //this.TextEntry.addEventListener("paste", handleText);
+    this.TextEntry.addEventListener("input", handleText);
+    //this.TextEntry.onp
     this.dummyObject = new THREE.Object3D();
 
 
@@ -449,12 +449,17 @@ Drawing.Minorb = function (options) {
         }
 
     }
-    function handleText() {
+    function handleText(event) {
+        
         if (that.selectedObject) {
             if (that.selectedObject.type == "node") {
                 if (that.TextEntry.value != that.selectedObject.text) {
                     var text = null;
                     that.selectedObject.text = that.TextEntry.value;
+                    if (Object.prototype.toString.call(event) == "[object KeyboardEvent]") {
+                        that.selectedObject.text += event.char;
+                        console.log(that.selectedObject.text);
+                    }
                     if (!that.selectedObject.textDrawObject) {
 
                         that.selectedObject.textDrawObject = new THREE.Object3D();
@@ -492,5 +497,4 @@ Drawing.Minorb = function (options) {
             }
         }
     }
-
 }

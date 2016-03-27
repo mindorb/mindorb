@@ -36,7 +36,7 @@ Drawing.Minorb = function (options) {
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
     this.textMaterial = options.textMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: true })
     this.scaleEnabled = false;
-	this.zoomEnabled = false;
+    this.zoomEnabled = false;
     this.mode = Modes.graph;
     this.currentColor = null;
     this.keys = [];
@@ -334,14 +334,13 @@ Drawing.Minorb = function (options) {
     }
 
     function mouseMove(event) {
-		
-		if (that.zoomEnabled)
-		{
-		camera.translateZ( -event.movementX*100);
-		} else
-        if (that.selectedObject && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
-            ScaleHull(that.selectedObject, event.movementX * 0.01);
-        }
+
+        if (that.zoomEnabled) {
+            camera.translateZ(-event.movementX * 100);
+        } else
+            if (that.selectedObject && !controls.enabled && that.scaleEnabled) { // to make sure the camera controls are not enabled when scaling the hull
+                ScaleHull(that.selectedObject, event.movementX * 0.01);
+            }
     }
 
     function keyDownHandler(event) {
@@ -351,15 +350,15 @@ Drawing.Minorb = function (options) {
 
             switch (key) {
                 case 'z':
-					  that.zoomEnabled = true;
-					 break;
+                    that.zoomEnabled = true;
+                    break;
                 case 'd':
                 case 'r':
                     controls.enabled = true;
                     break;
                 case String.fromCharCode(16)://Shift
                     that.scaleEnabled = true;
-                    mouse.shift=true;
+                    mouse.shift = true;
                     break;
             }
         }
@@ -373,7 +372,7 @@ Drawing.Minorb = function (options) {
 
             switch (key) {
                 case 'z':
-					that.zoomEnabled = false;
+                    that.zoomEnabled = false;
                 case 'd':
                 case 'r':
                     controls.enabled = false;
@@ -383,7 +382,7 @@ Drawing.Minorb = function (options) {
                         that.selectedObject = null;
                     }
                     that.scaleEnabled = false;
-                    mouse.shift=false;
+                    mouse.shift = false;
             }
         }
 
@@ -401,7 +400,7 @@ Drawing.Minorb = function (options) {
         }
         else if (hull.parent.parent.type == "hull") {
             var parentHull = hull.parent.parent;
-            if (hull.scale.length() > parentHull.scale.length() / 2 ) {
+            if (hull.scale.length() > parentHull.scale.length() / 2) {
                 ScaleHull(parentHull, scale);
             }
             else {
@@ -451,40 +450,45 @@ Drawing.Minorb = function (options) {
 
     }
     function handleText() {
-        if (that.selectedObject && that.selectedObject.type=="node") {
-            if (that.TextEntry.value != that.selectedObject.text) {
-                var text = null;
-                that.selectedObject.text = that.TextEntry.value;
-                if (!that.selectedObject.textDrawObject) {
+        if (that.selectedObject) {
+            if (that.selectedObject.type == "node") {
+                if (that.TextEntry.value != that.selectedObject.text) {
+                    var text = null;
+                    that.selectedObject.text = that.TextEntry.value;
+                    if (!that.selectedObject.textDrawObject) {
 
-                    that.selectedObject.textDrawObject = new THREE.Object3D();
-                    that.text.push(that.selectedObject.textDrawObject);
-                    that.selectedObject.add(that.selectedObject.textDrawObject);
+                        that.selectedObject.textDrawObject = new THREE.Object3D();
+                        that.text.push(that.selectedObject.textDrawObject);
+                        that.selectedObject.add(that.selectedObject.textDrawObject);
 
-                }
-                if (that.TextEntry.value.length > 0) {
-                    while (that.selectedObject.textDrawObject.children.length > 0) {
-                        that.selectedObject.textDrawObject.remove(that.selectedObject.textDrawObject.children[0]);
                     }
-                    text = new THREE.Mesh();
-                    that.text.push(text);
-                    text.type = "text";
-                    text.name = "text";
-                    text.material = that.nodeMaterial;
-                    var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
-                        font: 'helvetiker',
-                        weight: 'normal',
-                        curveSegments: 2,
-                        size: 100, height: 1
-                    });
-                    textGeom.computeBoundingBox();
-                    THREE.GeometryUtils.center(textGeom);
-                    //text.position.z -= 100;
-                    text.geometry = textGeom;
-                    that.text.push(text);
-                    text.lookAt(camera.position);
-                    that.selectedObject.textDrawObject.add(text);
+                    if (that.TextEntry.value.length > 0) {
+                        while (that.selectedObject.textDrawObject.children.length > 0) {
+                            that.selectedObject.textDrawObject.remove(that.selectedObject.textDrawObject.children[0]);
+                        }
+                        text = new THREE.Mesh();
+                        that.text.push(text);
+                        text.type = "text";
+                        text.name = "text";
+                        text.material = that.nodeMaterial;
+                        var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
+                            font: 'helvetiker',
+                            weight: 'normal',
+                            curveSegments: 2,
+                            size: 100, height: 1
+                        });
+                        textGeom.computeBoundingBox();
+                        THREE.GeometryUtils.center(textGeom);
+                        //text.position.z -= 100;
+                        text.geometry = textGeom;
+                        that.text.push(text);
+                        text.rotation = camera.rotation;
+                        that.selectedObject.textDrawObject.add(text);
+                    }
                 }
+            }
+            else if (that.selectedObject.type == "edge") {
+                //ToDo
             }
         }
     }

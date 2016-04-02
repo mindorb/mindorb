@@ -28,11 +28,20 @@
     <script src="drawings/mindorb.js"></script>
     <script src="fonts/helvetiker_bold.typeface.js"></script>
     <script src="fonts/helvetiker_regular.typeface.js"></script>
+    <script src="shaders/BillBoardShader.js"></script>
     <script type="text/javascript">
         var drawing;
         function createDrawing() {
-
-            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true});
+            var nodeMaterial = new THREE.ShaderMaterial({
+                uniforms: THREE.BillBoardShader.uniforms,
+                //color: THREE.BillBoardShader.uniforms.color,
+                vertexShader: THREE.BillBoardShader.vertexShader,
+                fragmentShader: THREE.BillBoardShader.fragmentShader
+            });
+            //nodeMaterial = new THREE.MeshBasicMaterial();
+            nodeMaterial.color = nodeMaterial.uniforms.color.value;
+            console.log(nodeMaterial.color);
+            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true,nodeMaterial:nodeMaterial});
         }
     </script>
 

@@ -31,6 +31,7 @@ Drawing.Minorb = function (options) {
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
     this.limit = options.limit || 1000;
+    console.log(options);
     this.edgeMaterial = options.edgeMaterial || new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
@@ -50,10 +51,13 @@ Drawing.Minorb = function (options) {
     //this.TextEntry.addEventListener("paste", handleText);
     this.TextEntry.addEventListener("input", handleText);
     //this.TextEntry.onp
-    this.dummyObject = new THREE.Object3D();
+    debugger;
 
 
     this.text = [];
+    this.nodes = [];
+    this.hulls = [];
+    this.edges = [];
 
     document.body.appendChild(this.TextEntry);
     var camera, scene, renderer, geometry, object_selection;
@@ -96,7 +100,7 @@ Drawing.Minorb = function (options) {
 
         scene = new THREE.Scene();
 
-        geometry = new THREE.CubeGeometry(50, 50, 50);
+        geometry = new THREE.CubeGeometry(50, 50, 0);
         window.addEventListener('keydown', keyDownHandler, false);
         window.addEventListener('keyup', keyUpHandler, false);
         document.addEventListener("mousemove", mouseMove);
@@ -241,8 +245,11 @@ Drawing.Minorb = function (options) {
         var scale = new THREE.Vector3();
         parentObject.matrixWorld.decompose(position, quaternion, scale);
         drawObject.position = parentObject.worldToLocal(drawObject.position);
+        drawObject.renderDepth = -1e20;
         drawObject.scale = new THREE.Vector3(1 / scale.x, 1 / scale.y, 1 / scale.z);
         parentObject.add(node.data.drawObject);
+        that.nodes.push(drawObject);
+        that.hulls.push(hull);
 
     }
 
@@ -318,6 +325,7 @@ Drawing.Minorb = function (options) {
                     that.text[i].children[0].rotation = (camera.rotation);
                 }
             }
+
         }
         // update stats
         if (that.show_stats) {
@@ -475,12 +483,15 @@ Drawing.Minorb = function (options) {
                         that.text.push(text);
                         text.type = "text";
                         text.name = "text";
-                        text.material = that.nodeMaterial;
+                        text.material = that.nodeMaterial.clone();
+                        text.material.color.setHex(0xffff00);
+                        
                         var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
                             font: 'helvetiker',
                             weight: 'normal',
                             curveSegments: 2,
-                            size: 100, height: 1
+                            size: 50,
+                            height: 1
                         });
                         textGeom.computeBoundingBox();
                         THREE.GeometryUtils.center(textGeom);
@@ -488,6 +499,7 @@ Drawing.Minorb = function (options) {
                         text.geometry = textGeom;
                         that.text.push(text);
                         text.rotation = camera.rotation;
+                        
                         that.selectedObject.textDrawObject.add(text);
                     }
                 }

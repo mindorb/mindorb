@@ -14,7 +14,7 @@ A 3D Mind Mapping tool which makes it possible to represent Mind Maps in 3D. We 
   - Creation of nearly an unlimited amount of nodes
   - Zooming into and out of nodes
   - Dragging of nodes
-  - text on branches
+  - text on branches - switch to text mode - click on a purple box - type something
 
 # the idea
 

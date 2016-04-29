@@ -338,20 +338,20 @@ Drawing.Minorb = function (options) {
 
                 if (angle > 0) {//top half
                     if (angle < Math.PI / 2) {//first quarter
-                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(40));
+                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(50));
                     }
                     else {//second quarter
-                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(40));
+                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(50));
 
                     }
                 }
                 else if (angle < 0) {
                     if (angle < -Math.PI / 2) {//third quarter
-                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(40));
+                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(50));
 
                     }
                     else {//fourth quarter
-                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(40));
+                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(50));
                     }
                 }
             }

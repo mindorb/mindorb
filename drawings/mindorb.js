@@ -20,7 +20,8 @@ Drawing.Minorb = function (options) {
     /// <field name='edgeMaterial' type='THREE.Material'>The material used to draw edges</field>
     /// <field name='nodeMaterial' type='THREE.Material'>The material used to draw nodes</field>
     /// <field name='hullMaterial' type='THREE.Material'>The material used to draw hulls</field>
-    /// <field name='text' type='Array' elementType="THREE.Object3D">Objects that faces the camera</field>
+    /// <field name='text' type='Array' elementType="THREE.Object3D">Node text should always face the camera</field>
+    /// <field name='text' type='Array' elementType="THREE.Object3D">edge text should always face the camera and should obey certain rules</field>
     Modes = {
         graph: 0,
         text: 1
@@ -31,11 +32,10 @@ Drawing.Minorb = function (options) {
     this.show_info = options.showInfo || false;
     this.show_labels = options.showLabels || false;
     this.limit = options.limit || 1000;
-    console.log(options);
     this.edgeMaterial = options.edgeMaterial || new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
-    this.textMaterial = options.textMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: true })
+    this.textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: false });
     this.scaleEnabled = false;
     this.zoomEnabled = false;
     this.mode = Modes.graph;
@@ -51,10 +51,10 @@ Drawing.Minorb = function (options) {
     //this.TextEntry.addEventListener("paste", handleText);
     this.TextEntry.addEventListener("input", handleText);
     //this.TextEntry.onp
-    debugger;
 
 
     this.text = [];
+    this.edgeText=[];
     this.nodes = [];
     this.hulls = [];
     this.edges = [];
@@ -145,7 +145,9 @@ Drawing.Minorb = function (options) {
 
                 }
                 else if (that.mode == Modes.graph) {
-                    if (obj != null && !that.scaleEnabled && !mouse.moved) { // && !controls.enabled
+                    console.log(obj);
+                    if (obj != null && !that.scaleEnabled ) { // && !controls.enabled
+                        console.log("in");
                         if (obj.type == "node") {
                             graph.nodes[obj.nodeID].data.drawObject.add(graph.nodes[obj.nodeID].data.hullDrawObject);
                         }
@@ -239,7 +241,7 @@ Drawing.Minorb = function (options) {
         node.data.hullDrawObject = hull;
         node.data.drawObject = drawObject;
         drawObject.position = new THREE.Vector3(node.position.x, node.position.y, node.position.z);
-
+        drawObject.material.color = drawObject.material.uniforms.color.value;
         var position = new THREE.Vector3();
         var quaternion = new THREE.Quaternion();
         var scale = new THREE.Vector3();
@@ -276,7 +278,6 @@ Drawing.Minorb = function (options) {
 
 
         var curve = new THREE.CubicBezierCurve3(source, controlPoint, controlPoint, target);
-        //console.log(curve.getPoints(20));
         var edgeGeometry = new THREE.Geometry();
         edgeGeometry.vertices = curve.getPoints(20);
 
@@ -292,9 +293,10 @@ Drawing.Minorb = function (options) {
             cylinderGeometry.vertices[i].add(edgeGeometry.vertices[cylinderGeometry.vertices[i].index]);
         }
         cylinder.type = "edge";
-
+        
         edges.push(cylinder);
         edge.source.data.hullDrawObject.add(cylinder);
+
         //line = new THREE.Geometry();
         //line.vertices.push(source,target);
         //edge.source.data.hullDrawObject.add(line,new THREE.LineBasicMaterial({color: 0xff00ff}));
@@ -324,6 +326,9 @@ Drawing.Minorb = function (options) {
                 if (that.text[i].children[0]) {
                     that.text[i].children[0].rotation = (camera.rotation);
                 }
+            }
+            for (var i = 0; i < that.edgeText.length; i++) {
+
             }
 
         }
@@ -445,12 +450,10 @@ Drawing.Minorb = function (options) {
             case Modes.graph:
                 that.mode = Modes.graph;
                 object_selection.mask = ['node', 'hull'];
-                console.log("g");
                 break;
             case Modes.text:
                 that.mode = Modes.text;
                 object_selection.mask = ['node', 'edge'];
-                console.log("t");
                 break;
             default:
 
@@ -458,7 +461,6 @@ Drawing.Minorb = function (options) {
 
     }
     function handleText(event) {
-        
         if (that.selectedObject) {
             if (that.selectedObject.type == "node") {
                 if (that.TextEntry.value != that.selectedObject.text) {
@@ -466,7 +468,6 @@ Drawing.Minorb = function (options) {
                     that.selectedObject.text = that.TextEntry.value;
                     if (Object.prototype.toString.call(event) == "[object KeyboardEvent]") {
                         that.selectedObject.text += event.char;
-                        console.log(that.selectedObject.text);
                     }
                     if (!that.selectedObject.textDrawObject) {
 
@@ -483,8 +484,8 @@ Drawing.Minorb = function (options) {
                         that.text.push(text);
                         text.type = "text";
                         text.name = "text";
-                        text.material = that.nodeMaterial.clone();
-                        text.material.color.setHex(0xffff00);
+                        text.material = that.textMaterial.clone();
+                        text.material.color.setHex(0xff0000);
                         
                         var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
                             font: 'helvetiker',
@@ -505,7 +506,21 @@ Drawing.Minorb = function (options) {
                 }
             }
             else if (that.selectedObject.type == "edge") {
-                //ToDo
+                // find the line direction        
+                var point1 = that.selectedObject.geometry.vertices[that.selectedObject.geometry.vertices.length];
+                var point2 = that.selectedObject.geometry.vertices[0];
+                var vector = new THREE.Vector3();
+                vector.setFromMatrixPosition(that.selectedObject.matrixWorld);
+                console.log(that.selectedObject.position);
+                console.log(vector);
+                var box = new THREE.BoxGeometry(50, 50, 50, 1, 1, 1);
+                textObject = new THREE.Mesh(box, that.textMaterial);
+                textObject.p1 = point1;
+                textObject.p1 = point2;
+                var direction = point2.clone().normalize();
+                textObject.position=direction.multiplyScalar(point2.length()/2)
+                that.selectedObject.add(textObject);
+                that.edgeText.push(textObject);
             }
         }
     }

@@ -383,7 +383,6 @@ THREE.TrackballControls = function (object, domElement) {
 
     function mousedown(event) {
 
-        console.log(_state);
         if (_this.enabled === false) return;
         
         if (_state === STATE.NONE) {

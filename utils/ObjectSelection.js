@@ -13,14 +13,14 @@
     clicked: callback function, passes the current clicked object
  */
 
-var mouse = { x: 0, y: 0, moved : false, shift : false};
+var mouse = { x: 0, y: 0, moved: false, shift: false };
 THREE.ObjectSelection = function (parameters) {
     var parameters = parameters || {};
     this.point = null;
     this.domElement = parameters.domElement || document;
     this.projector = new THREE.Projector();
     this.INTERSECTED;
-    this.mask = ['node','hull'];
+    this.mask = ['node', 'hull'];
     var _this = this;
     var base = null;
     var callbackSelected = parameters.selected;
@@ -30,7 +30,7 @@ THREE.ObjectSelection = function (parameters) {
 
     this.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
     function onDocumentMouseMove(event) {
-        mouse.moved=true;
+        mouse.moved = true;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
@@ -39,7 +39,7 @@ THREE.ObjectSelection = function (parameters) {
     function onDocumentMouseClick(event) {
         if (_this.INTERSECTED) {
             if (typeof callbackClicked === 'function') {
-                
+
                 callbackClicked(_this.INTERSECTED);
             }
         }
@@ -47,9 +47,9 @@ THREE.ObjectSelection = function (parameters) {
     this.domElement.addEventListener('mousedown', onMouseDown, false);
 
     function onMouseDown(event) {
-        mouse.moved=false;
-		
-        if (mouse.shift==false) { controls.enabled=true; }
+        mouse.moved = false;
+
+        if (mouse.shift == false) { controls.enabled = true; }
         if (_this.INTERSECTED) {
             if (typeof callbackMouseDown === 'function') {
                 callbackMouseDown(_this.INTERSECTED, event);
@@ -58,7 +58,7 @@ THREE.ObjectSelection = function (parameters) {
     }
     this.domElement.addEventListener('mouseup', onMouseUp, false);
     function onMouseUp(event) {
-    	controls.enabled=false;
+        controls.enabled = false;
         if (typeof callbackMouseUp === 'function') {
             callbackMouseUp(_this.INTERSECTED, event);
         }
@@ -73,7 +73,7 @@ THREE.ObjectSelection = function (parameters) {
 
         var intersects = raycaster.intersectObject(scene, true);
         var i = 1;
-        while (intersects.length > 0 && intersects[0].object && this.mask.indexOf(intersects[0].object.type)<0) {            
+        while (intersects.length > 0 && intersects[0].object && this.mask.indexOf(intersects[0].object.type) < 0) {
             intersects.splice(0, 1);
         }
         if (intersects.length > 0) {
@@ -89,9 +89,17 @@ THREE.ObjectSelection = function (parameters) {
                 }
 
                 this.INTERSECTED = intersects[0].object;
-                console.log(this.INTERSECTED.material.color); debugger;
-                this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
-                this.INTERSECTED.material.color.setHex(0xff00ff);
+                if (this.INTERSECTED.material.color) {
+
+                    this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
+                    this.INTERSECTED.material.color.setHex(0xff00ff);
+
+                }
+                else {
+                    this.INTERSECTED.currentHex = this.INTERSECTED.material.uniforms.color.value.getHex();
+                    this.INTERSECTED.material.uniforms.color.value.setHex(0xff00ff);
+
+                }
                 if (typeof callbackSelected === 'function') {
                     callbackSelected(this.INTERSECTED);
                 }
@@ -99,7 +107,12 @@ THREE.ObjectSelection = function (parameters) {
         } else {
 
             if (this.INTERSECTED) {
-                this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
+                if (this.INTERSECTED.material.color){
+                    this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
+                }
+                else {// for custom shaders
+                    this.INTERSECTED.material.uniforms.color.value.setHex(this.INTERSECTED.currentHex);
+                }
             }
             this.INTERSECTED = null;
             if (typeof callbackSelected === 'function') {

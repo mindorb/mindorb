@@ -34,14 +34,10 @@
         function createDrawing() {
             var nodeMaterial = new THREE.ShaderMaterial({
                 uniforms: THREE.BillBoardShader.uniforms,
-                //color: THREE.BillBoardShader.uniforms.color,
                 vertexShader: THREE.BillBoardShader.vertexShader,
                 fragmentShader: THREE.BillBoardShader.fragmentShader
             });
-            //nodeMaterial = new THREE.MeshBasicMaterial();
-            nodeMaterial.color = nodeMaterial.uniforms.color.value;
-            console.log(nodeMaterial.color);
-            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true,nodeMaterial:nodeMaterial});
+            drawing = new Drawing.Minorb({ selection: true, showStats: true, showInfo: true, nodeMaterial: nodeMaterial });
         }
     </script>
 
@@ -70,22 +66,22 @@
             right: 0;
             z-index: 10;
         }
-        #TextEntry{
-            display:block;
+
+        #TextEntry {
+            display: block;
             position: absolute;
-            top :   -50000px ;
-            left : -500000px;
+            top: -50000px;
+            left: -500000px;
         }
-       
     </style>
 </head>
 <body onload="createDrawing()">
     <div id="options">
         <form>
             <p>
-                <select onchange = "drawing.changeMode(this)">
-                    <option value = "graph" onchange = "drawing.changeMode('ss')">Graphing mode</option>
-                    <option value = "text"  onselect = "">Text Mode</option>
+                <select onchange="drawing.changeMode(this)">
+                    <option value="graph" onchange="drawing.changeMode('ss')">Graphing mode</option>
+                    <option value="text" onselect="">Text Mode</option>
                 </select>
             </p>
         </form>
@@ -97,7 +93,7 @@
         Zoom: Z or Mouse Wheel<br />
         Drag: Press Key D + mouse Move<br />
         Scale a hull : press Key Shift + mouse click + mouse move
-		Enter text: Switch to text mode, click on box, type something
+        Enter text: Switch to text mode, click on box, type something
     </div>
 
 </body>

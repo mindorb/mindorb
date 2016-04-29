@@ -35,7 +35,7 @@ Drawing.Minorb = function (options) {
     this.edgeMaterial = options.edgeMaterial || new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 1, linewidth: 50 });
     this.nodeMaterial = options.nodeMaterial || new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 0.5 });
     this.hullMaterial = options.hullMaterial || new THREE.MeshBasicMaterial({ color: 0xff00ff, opacity: 0.1, transparent: true })
-    this.textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, opacity: 1, transparent: false });
+    this.textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 1, transparent: false });
     this.scaleEnabled = false;
     this.zoomEnabled = false;
     this.mode = Modes.graph;
@@ -329,6 +329,31 @@ Drawing.Minorb = function (options) {
             }
             for (var i = 0; i < that.edgeText.length; i++) {
 
+                that.edgeText[i].position = that.edgeText[i].normalPosition.clone();
+                var projector = new THREE.Projector();
+                var vector = new THREE.Vector3();
+                projector.projectVector(vector.setFromMatrixPosition(that.edgeText[i].matrixWorld), camera);
+                vector = vector.normalize();
+                var angle = Math.atan2(vector.y, vector.x);
+
+                if (angle > 0) {//top half
+                    if (angle < Math.PI / 2) {//first quarter
+                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(40));
+                    }
+                    else {//second quarter
+                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(40));
+
+                    }
+                }
+                else if (angle < 0) {
+                    if (angle < -Math.PI / 2) {//third quarter
+                        that.edgeText[i].position.add(new THREE.Vector3(vector.y, -vector.x).multiplyScalar(40));
+
+                    }
+                    else {//fourth quarter
+                        that.edgeText[i].position.add(new THREE.Vector3(-vector.y, vector.x).multiplyScalar(40));
+                    }
+                }
             }
 
         }
@@ -485,7 +510,6 @@ Drawing.Minorb = function (options) {
                         text.type = "text";
                         text.name = "text";
                         text.material = that.textMaterial.clone();
-                        text.material.color.setHex(0xff0000);
                         
                         var textGeom = new THREE.TextGeometry(that.TextEntry.value, {
                             font: 'helvetiker',
@@ -496,7 +520,6 @@ Drawing.Minorb = function (options) {
                         });
                         textGeom.computeBoundingBox();
                         THREE.GeometryUtils.center(textGeom);
-                        //text.position.z -= 100;
                         text.geometry = textGeom;
                         that.text.push(text);
                         text.rotation = camera.rotation;
@@ -511,14 +534,17 @@ Drawing.Minorb = function (options) {
                 var point2 = that.selectedObject.geometry.vertices[0];
                 var vector = new THREE.Vector3();
                 vector.setFromMatrixPosition(that.selectedObject.matrixWorld);
-                console.log(that.selectedObject.position);
-                console.log(vector);
-                var box = new THREE.BoxGeometry(50, 50, 50, 1, 1, 1);
+
+                var width = point2.length();
+                var box = new THREE.BoxGeometry(2, 10, width, 1, 1, 1);
                 textObject = new THREE.Mesh(box, that.textMaterial);
-                textObject.p1 = point1;
-                textObject.p1 = point2;
+
+                textObject.p2 = point2;
                 var direction = point2.clone().normalize();
-                textObject.position=direction.multiplyScalar(point2.length()/2)
+                textObject.rotation = (camera.rotation);
+                textObject.lookAt(direction);
+                textObject.position = direction.multiplyScalar(point2.length() / 2);
+                textObject.normalPosition = textObject.position.clone();
                 that.selectedObject.add(textObject);
                 that.edgeText.push(textObject);
             }

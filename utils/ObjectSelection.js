@@ -45,6 +45,34 @@ THREE.ObjectSelection = function (parameters) {
         }
     }
     this.domElement.addEventListener('mousedown', onMouseDown, false);
+	this.domElement.addEventListener('touchstart', onTouchStart, false);
+    this.domElement.addEventListener('touchend', onTouchEnd, false);
+    this.domElement.addEventListener('touchmove', onTouchMove, false);
+
+	function onTouchStart(event) {
+		 mouse.moved = false;
+
+        if (mouse.shift == false) { controls.enabled = true; }
+        if (_this.INTERSECTED) {
+            if (typeof callbackMouseDown === 'function') {
+                callbackMouseDown(_this.INTERSECTED, event);
+            }
+        }
+	}
+
+	function onTouchEnd(event) {
+		  controls.enabled = false;
+        if (typeof callbackMouseUp === 'function') {
+            callbackMouseUp(_this.INTERSECTED, event);
+        }
+	}
+
+	function onTouchMove(event) {
+		mouse.moved = true;
+        mouse.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+
+	}
 
     function onMouseDown(event) {
         mouse.moved = false;
